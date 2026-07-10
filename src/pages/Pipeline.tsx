@@ -4,8 +4,8 @@ import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
 import { useApp } from '../context/AppContext'
 import NewDealModal from '../components/NewDealModal'
-import { contracts, contractTemplates } from '../data/mockData'
-import { FileText, TrendingUp, FileCheck, ChevronRight, LayoutGrid, List, GitBranch } from 'lucide-react'
+import { contracts, contractTemplates, contacts as allContacts } from '../data/mockData'
+import { FileText, TrendingUp, FileCheck, ChevronRight, LayoutGrid, List, GitBranch, User, Package } from 'lucide-react'
 
 const stages = ['Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']
 const stageColors: Record<string, string> = {
@@ -43,6 +43,8 @@ export default function Pipeline() {
   const gap = target - wonValue
 
   const getOrg = (orgId: number) => organisations.find(o => o.id === orgId)?.name || '—'
+  const getContact = (contactId?: number) => contactId ? allContacts.find(c => c.id === contactId) : null
+  const getPrimaryProduct = (deal: typeof deals[0]) => deal.lineItems?.[0]?.description || null
 
   return (
     <>
@@ -122,11 +124,20 @@ export default function Pipeline() {
                         </td>
                       </tr>
                     ) : (
-                      deals.map(d => (
+                      deals.map(d => {
+                        const contact = getContact(d.contactId)
+                        const product = getPrimaryProduct(d)
+                        return (
                         <tr key={d.id} onClick={() => navigate(`/pipeline/${d.id}`)}
                           className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer group">
-                          <td className="px-4 py-3 font-medium text-gray-900 group-hover:text-pluto-700 transition-colors">{d.name}</td>
-                          <td className="px-4 py-3 text-gray-500">{getOrg(d.orgId)}</td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-900 group-hover:text-pluto-700 transition-colors">{d.name}</p>
+                            {product && <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><Package size={10}/>{product}{d.lineItems.length > 1 ? ` +${d.lineItems.length - 1}` : ''}</p>}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-gray-700">{getOrg(d.orgId)}</p>
+                            {contact && <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5"><User size={10}/>{contact.name}</p>}
+                          </td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${stageColors[d.stage]}`}>{d.stage}</span>
                           </td>
@@ -136,7 +147,7 @@ export default function Pipeline() {
                             <ChevronRight size={14} className="text-gray-300 group-hover:text-pluto-500" />
                           </td>
                         </tr>
-                      ))
+                      )})
                     )}
                   </tbody>
                 </table>
@@ -160,13 +171,26 @@ export default function Pipeline() {
                             <p className="text-xs text-gray-300">No deals</p>
                           </div>
                         ) : (
-                          stageDeals.map(d => (
+                          stageDeals.map(d => {
+                            const contact = getContact(d.contactId)
+                            const product = getPrimaryProduct(d)
+                            return (
                             <div key={d.id}
                               onClick={() => navigate(`/pipeline/${d.id}`)}
                               className={`bg-white rounded-xl p-4 shadow-sm border-2 ${stageBorder[stage]} hover:shadow-md cursor-pointer transition-all group`}>
-                              <p className="font-semibold text-gray-900 text-sm mb-1 group-hover:text-pluto-700 transition-colors leading-snug">{d.name}</p>
-                              <p className="text-xs text-gray-400 mb-3">{getOrg(d.orgId)}</p>
-                              <div className="flex items-center justify-between">
+                              <p className="font-semibold text-gray-900 text-sm mb-0.5 group-hover:text-pluto-700 transition-colors leading-snug">{d.name}</p>
+                              <p className="text-xs text-gray-400">{getOrg(d.orgId)}</p>
+                              {contact && (
+                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                  <User size={9} />{contact.name} · {contact.role}
+                                </p>
+                              )}
+                              {product && (
+                                <p className="text-xs text-pluto-600 flex items-center gap-1 mt-1 bg-pluto-50 rounded px-1.5 py-0.5 w-fit">
+                                  <Package size={9} />{product}{d.lineItems.length > 1 ? ` +${d.lineItems.length-1}` : ''}
+                                </p>
+                              )}
+                              <div className="flex items-center justify-between mt-2">
                                 <p className="text-sm font-bold text-gray-900">{(d.value / 1000).toFixed(0)}K CFA</p>
                                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${d.age > 14 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
                                   {d.age}d
@@ -178,7 +202,7 @@ export default function Pipeline() {
                                 </div>
                               )}
                             </div>
-                          ))
+                          )})
                         )}
                         {stage !== 'Won' && stage !== 'Lost' && (
                           <button onClick={() => setShowNew(true)}

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Plus, Search, Building2, User, GitBranch, X, ChevronRight } from 'lucide-react'
+import { Bell, Plus, Search, Building2, User, GitBranch, X, ChevronRight, Globe } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useLang } from '../context/LanguageContext'
+import { useLang, languageOptions } from '../context/LanguageContext'
 import { useApp } from '../context/AppContext'
 import NewOrganisationModal from './NewOrganisationModal'
 import NewContactModal from './NewContactModal'
@@ -29,7 +29,10 @@ const notifications = [
 ]
 
 export default function TopBar({ title, actions }: TopBarProps) {
-  const { lang, toggle } = useLang()
+  const { lang, setLang } = useLang()
+  const [showLangMenu, setShowLangMenu] = useState(false)
+  const langRef = useRef<HTMLDivElement>(null)
+  const currentLang = languageOptions.find(o => o.code === lang)
   const { organisations, contacts, deals } = useApp()
   const navigate = useNavigate()
 
@@ -73,6 +76,7 @@ export default function TopBar({ title, actions }: TopBarProps) {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowResults(false)
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifs(false)
       if (newMenuRef.current && !newMenuRef.current.contains(e.target as Node)) setShowNewMenu(false)
+      if (langRef.current && !langRef.current.contains(e.target as Node)) setShowLangMenu(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -140,12 +144,28 @@ export default function TopBar({ title, actions }: TopBarProps) {
         <div className="flex items-center gap-2 shrink-0">
           {actions}
 
-          {/* Language toggle */}
-          <button onClick={toggle}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-xs font-medium text-gray-600"
-            title="Toggle language">
-            <span>{lang === 'en' ? '🇬🇧 EN' : '🇫🇷 FR'}</span>
-          </button>
+          {/* Language selector */}
+          <div ref={langRef} className="relative">
+            <button onClick={() => { setShowLangMenu(s => !s); setShowNotifs(false); setShowNewMenu(false) }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-xs font-medium text-gray-600">
+              <Globe size={13} />
+              <span>{currentLang?.nativeLabel}</span>
+            </button>
+            {showLangMenu && (
+              <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+                {languageOptions.map(opt => (
+                  <button key={opt.code}
+                    onClick={() => { setLang(opt.code); setShowLangMenu(false) }}
+                    className={`w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0 ${
+                      lang === opt.code ? 'bg-pluto-50 text-pluto-700' : 'text-gray-700'
+                    }`}>
+                    <span className="text-sm font-medium">{opt.nativeLabel}</span>
+                    <span className="text-xs text-gray-400">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Notifications */}
           <div ref={notifRef} className="relative">

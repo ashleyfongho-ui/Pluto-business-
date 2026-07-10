@@ -57,7 +57,7 @@ function ProgressRow({ label, value, max, color }: { label: string; value: numbe
 export default function Reports() {
   const { t } = useLang()
   const { deals, invoices, organisations, contacts } = useApp()
-  const [tab, setTab] = useState<'sales' | 'inventory' | 'logistics' | 'staff' | 'pipeline'>('sales')
+  const [tab, setTab] = useState<'sales' | 'profitability' | 'inventory' | 'logistics' | 'staff' | 'pipeline'>('sales')
   const [range, setRange] = useState('This Month')
 
   // ─── Sales calcs ───────────────────────────────────────────────────────────
@@ -112,8 +112,40 @@ export default function Reports() {
     color: stage === 'Won' ? '#10b981' : stage === 'Lost' ? '#ef4444' : stage === 'Negotiation' ? '#f59e0b' : stage === 'Proposal' ? '#8b5cf6' : '#3b82f6',
   }))
 
+  // ─── Profitability calcs ─────────────────────────────────────────────────
+  const productMargins = inventory.map(item => {
+    const totalRevenue = item.batches.reduce((s, b) => s + b.soldUnits * b.sellPerUnit, 0)
+    const totalCost = item.batches.reduce((s, b) => s + b.soldUnits * b.costPerUnit, 0)
+    const margin = totalRevenue > 0 ? Math.round(((totalRevenue - totalCost) / totalRevenue) * 100) : 0
+    const profit = totalRevenue - totalCost
+    return { name: item.name, sku: item.sku, revenue: totalRevenue, cost: totalCost, profit, margin }
+  }).sort((a, b) => b.profit - a.profit)
+
+  // Revenue by staff (from deals owned)
+  const staffRevenue = staff.map(s => {
+    const ownedDeals = deals.filter(d => d.owner === `u${s.id}` && d.stage === 'Won')
+    const revenue = ownedDeals.reduce((acc, d) => acc + d.value, 0)
+    return { name: s.name, role: s.role, revenue, deals: ownedDeals.length }
+  }).sort((a, b) => b.revenue - a.revenue)
+  const maxStaffRevenue = staffRevenue[0]?.revenue || 1
+
+  // Revenue by location (from organisations' won deals)
+  const locationRevenue = (() => {
+    const byCity: Record<string, number> = {}
+    deals.filter(d => d.stage === 'Won').forEach(d => {
+      const org = organisations.find(o => o.id === d.orgId)
+      if (org) { byCity[org.city] = (byCity[org.city] || 0) + d.value }
+    })
+    return Object.entries(byCity).map(([city, revenue]) => ({ city, revenue })).sort((a,b) => b.revenue - a.revenue)
+  })()
+  const maxLocRevenue = locationRevenue[0]?.revenue || 1
+
+  // Highest cost items
+  const highestCostItems = [...productMargins].sort((a, b) => b.cost - a.cost)
+
   const tabs = [
     { key: 'sales', label: 'Sales' },
+    { key: 'profitability', label: 'Profitability' },
     { key: 'inventory', label: 'Inventory' },
     { key: 'logistics', label: 'Logistics' },
     { key: 'staff', label: 'Staff' },
@@ -215,6 +247,103 @@ export default function Reports() {
                     <p className="text-xs text-gray-400">{s.sub}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── PROFITABILITY ─── */}
+        {tab === 'profitability' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <KPICard label="Best Margin" value={`${productMargins[0]?.margin ?? 0}%`} sub={productMargins[0]?.name} color="text-green-600" trend="up" />
+              <KPICard label="Total Gross Profit" value={`${(productMargins.reduce((s,p) => s+p.profit, 0)/1000).toFixed(0)}K CFA`} color="text-pluto-700" />
+              <KPICard label="Top Earner" value={staffRevenue[0]?.name.split(' ')[0] ?? '—'} sub={staffRevenue[0] ? `${(staffRevenue[0].revenue/1000).toFixed(0)}K CFA won` : ''} color="text-pluto-700" />
+            </div>
+
+            {/* Margin by product */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <h3 className="font-semibold text-gray-900 mb-1">Profit Margin by Product</h3>
+              <p className="text-xs text-gray-400 mb-4">Based on cost vs sell price across all batches sold</p>
+              <div className="space-y-3">
+                {productMargins.map(p => (
+                  <div key={p.sku} className="flex items-center gap-3">
+                    <div className="w-32 shrink-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
+                      <p className="text-xs text-gray-400">{p.sku}</p>
+                    </div>
+                    <div className="flex-1 bg-gray-100 rounded-full h-2">
+                      <div className="h-2 rounded-full transition-all" style={{ width: `${Math.max(p.margin, 0)}%`, background: p.margin >= 30 ? '#10b981' : p.margin >= 15 ? '#f59e0b' : '#ef4444' }} />
+                    </div>
+                    <div className="text-right w-32 shrink-0">
+                      <span className={`text-sm font-bold ${p.margin >= 30 ? 'text-green-600' : p.margin >= 15 ? 'text-amber-600' : 'text-red-500'}`}>{p.margin}%</span>
+                      <span className="text-xs text-gray-400 ml-2">{(p.profit/1000).toFixed(0)}K profit</span>
+                    </div>
+                  </div>
+                ))}
+                {productMargins.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No sold inventory data yet</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Revenue by staff */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <h3 className="font-semibold text-gray-900 mb-1">Revenue by Staff Member</h3>
+                <p className="text-xs text-gray-400 mb-4">Won deals attributed per person</p>
+                <div className="space-y-3">
+                  {staffRevenue.map(s => (
+                    <div key={s.name} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-pluto-100 text-pluto-700 flex items-center justify-center text-xs font-bold shrink-0">
+                        {s.name.split(' ').map(n=>n[0]).join('').slice(0,2)}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-sm font-medium text-gray-900">{s.name}</span>
+                          <span className="text-sm font-bold text-gray-900">{s.revenue > 0 ? `${(s.revenue/1000).toFixed(0)}K` : '—'} CFA</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5">
+                          <div className="h-1.5 rounded-full bg-pluto-500" style={{ width: `${(s.revenue/maxStaffRevenue)*100}%` }} />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">{s.deals} deal{s.deals !== 1 ? 's' : ''} won</p>
+                      </div>
+                    </div>
+                  ))}
+                  {staffRevenue.every(s => s.revenue === 0) && <p className="text-sm text-gray-400 text-center py-4">No won deals yet</p>}
+                </div>
+              </div>
+
+              {/* Revenue by location */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <h3 className="font-semibold text-gray-900 mb-1">Revenue by Location</h3>
+                <p className="text-xs text-gray-400 mb-4">City / market generating won deal value</p>
+                {locationRevenue.length > 0 ? (
+                  <div className="space-y-3">
+                    {locationRevenue.map((l, i) => (
+                      <div key={l.city} className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-gray-700 w-24 shrink-0">{l.city}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-2">
+                          <div className="h-2 rounded-full" style={{ width: `${(l.revenue/maxLocRevenue)*100}%`, background: ['#7c3aed','#5b21b6','#4c1d95','#2e1065'][i%4] }} />
+                        </div>
+                        <span className="text-sm font-bold text-gray-900 w-24 text-right">{(l.revenue/1000).toFixed(0)}K CFA</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-4">No won deals yet</p>
+                )}
+
+                {/* Highest cost items */}
+                <div className="mt-6 pt-5 border-t border-gray-100">
+                  <h4 className="font-semibold text-gray-900 mb-3 text-sm">Highest Cost Items</h4>
+                  <div className="space-y-2">
+                    {highestCostItems.slice(0,4).map(p => (
+                      <div key={p.sku} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700 truncate flex-1">{p.name}</span>
+                        <span className="text-red-500 font-semibold ml-3">{(p.cost/1000).toFixed(0)}K CFA cost</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

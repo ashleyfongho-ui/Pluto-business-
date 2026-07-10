@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
-import { campaigns, campaignTemplates } from '../data/mockData'
-import { Upload, X } from 'lucide-react'
+import { campaigns, campaignTemplates, contacts, organisations } from '../data/mockData'
+import { Upload, X, Megaphone, MessageSquare, Mail, Users, BarChart2, Send, ChevronRight, Plus } from 'lucide-react'
 
 const statusColors: Record<string, string> = {
   Active: 'bg-green-100 text-green-700',
@@ -13,6 +13,16 @@ const statusColors: Record<string, string> = {
 export default function Campaigns() {
   const { t } = useLang()
   const [showImport, setShowImport] = useState(false)
+  const [showNew, setShowNew] = useState(false)
+  const [newStep, setNewStep] = useState<1|2|3>(1)
+  const [newCampaign, setNewCampaign] = useState({
+    name: '',
+    type: 'WhatsApp',
+    targetSegment: 'all',
+    subject: '',
+    message: '',
+    scheduledDate: '',
+  })
 
   return (
     <>
@@ -27,7 +37,7 @@ export default function Campaigns() {
                 className="flex items-center gap-1.5 px-3 py-1.5 border border-pluto-200 text-pluto-600 rounded-lg text-sm font-medium hover:bg-pluto-50 transition-colors">
                 <Upload size={13} />{t('import list')}
               </button>
-              <button className="px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">+ New Campaign</button>
+              <button onClick={() => setShowNew(true)} className="px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">+ New Campaign</button>
             </div>
           </div>
           <table className="w-full text-sm">
@@ -69,6 +79,152 @@ export default function Campaigns() {
           </div>
         </div>
       </main>
+
+      {/* New Campaign Modal */}
+      {showNew && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="font-semibold text-gray-900">New Campaign</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Step {newStep} of 3 — {newStep === 1 ? 'Setup' : newStep === 2 ? 'Message' : 'Audience & Schedule'}</p>
+              </div>
+              <button onClick={() => { setShowNew(false); setNewStep(1) }} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            </div>
+
+            {/* Step progress */}
+            <div className="flex px-6 py-3 gap-2">
+              {[1,2,3].map(s => (
+                <div key={s} className={`flex-1 h-1.5 rounded-full ${s <= newStep ? 'bg-pluto-600' : 'bg-gray-100'}`} />
+              ))}
+            </div>
+
+            <div className="px-6 pb-6">
+              {newStep === 1 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Campaign Name</label>
+                    <input value={newCampaign.name} onChange={e => setNewCampaign(c => ({...c, name: e.target.value}))}
+                      placeholder="e.g. Q3 Pharmacy Outreach"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-2 block">Campaign Type</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { type: 'WhatsApp', icon: MessageSquare, desc: 'Direct WhatsApp messages', color: 'text-green-600 bg-green-50 border-green-200' },
+                        { type: 'Email', icon: Mail, desc: 'Email broadcast', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+                        { type: 'SMS', icon: Send, desc: 'SMS bulk send', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+                        { type: 'Push', icon: Megaphone, desc: 'App push notification', color: 'text-pluto-600 bg-pluto-50 border-pluto-200' },
+                      ].map(opt => (
+                        <button key={opt.type} onClick={() => setNewCampaign(c => ({...c, type: opt.type}))}
+                          className={`p-3 rounded-xl border-2 text-left transition-all ${
+                            newCampaign.type === opt.type ? opt.color + ' ring-2 ring-offset-1 ring-pluto-400' : 'border-gray-100 hover:border-gray-200'
+                          }`}>
+                          <opt.icon size={16} className={newCampaign.type === opt.type ? '' : 'text-gray-400'} />
+                          <p className="font-medium text-gray-900 text-sm mt-1">{opt.type}</p>
+                          <p className="text-xs text-gray-400">{opt.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={() => setNewStep(2)}
+                    disabled={!newCampaign.name}
+                    className="w-full py-2.5 bg-pluto-600 text-white rounded-xl text-sm font-medium hover:bg-pluto-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5">
+                    Continue <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
+
+              {newStep === 2 && (
+                <div className="space-y-4">
+                  {newCampaign.type === 'Email' && (
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Subject Line</label>
+                      <input value={newCampaign.subject} onChange={e => setNewCampaign(c => ({...c, subject: e.target.value}))}
+                        placeholder="e.g. New products available — exclusive pricing inside"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Message</label>
+                    <textarea value={newCampaign.message} onChange={e => setNewCampaign(c => ({...c, message: e.target.value}))}
+                      rows={6}
+                      placeholder={newCampaign.type === 'WhatsApp' ? 'Hello {{name}}, we have an exclusive offer for you…' : 'Write your campaign message here…'}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300 resize-none" />
+                    <p className="text-xs text-gray-400 mt-1">Use {'{{name}}'} to personalise with contact name</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs font-medium text-gray-500 mb-2">Quick Templates</p>
+                    <div className="space-y-1">
+                      {campaignTemplates.slice(0,3).map(tp => (
+                        <button key={tp.id} onClick={() => setNewCampaign(c => ({...c, subject: tp.subject, message: tp.preview}))}
+                          className="w-full text-left text-xs text-pluto-600 hover:text-pluto-800 py-1 flex items-center gap-1.5">
+                          <Plus size={10} /> {tp.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setNewStep(1)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Back</button>
+                    <button onClick={() => setNewStep(3)} className="flex-1 py-2 bg-pluto-600 text-white rounded-xl text-sm font-medium hover:bg-pluto-700 flex items-center justify-center gap-1.5">
+                      Continue <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {newStep === 3 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-2 block">Target Audience</label>
+                    <div className="space-y-2">
+                      {[
+                        { value: 'all', label: `All contacts (${contacts.length})`, icon: Users },
+                        { value: 'pharmacies', label: `Pharmacies (${organisations.filter(o => o.sector === 'Pharmacy').length} orgs)`, icon: Users },
+                        { value: 'healthcare', label: `Healthcare orgs (${organisations.filter(o => o.sector === 'Healthcare').length} orgs)`, icon: Users },
+                        { value: 'custom', label: 'Custom segment (tag/filter)', icon: BarChart2 },
+                      ].map(seg => (
+                        <label key={seg.value} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                          newCampaign.targetSegment === seg.value ? 'border-pluto-300 bg-pluto-50' : 'border-gray-100 hover:border-gray-200'
+                        }`}>
+                          <input type="radio" value={seg.value} checked={newCampaign.targetSegment === seg.value}
+                            onChange={e => setNewCampaign(c => ({...c, targetSegment: e.target.value}))}
+                            className="accent-pluto-600" />
+                          <seg.icon size={14} className="text-gray-400" />
+                          <span className="text-sm text-gray-700">{seg.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Schedule Send</label>
+                    <input type="datetime-local" value={newCampaign.scheduledDate}
+                      onChange={e => setNewCampaign(c => ({...c, scheduledDate: e.target.value}))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
+                    <p className="text-xs text-gray-400 mt-1">Leave blank to save as draft</p>
+                  </div>
+                  <div className="bg-pluto-50 rounded-xl p-4 border border-pluto-100">
+                    <p className="text-xs font-semibold text-pluto-700 mb-2">Campaign Summary</p>
+                    <div className="space-y-1 text-xs text-gray-600">
+                      <p>📢 <strong>{newCampaign.name}</strong> via {newCampaign.type}</p>
+                      <p>👥 {newCampaign.targetSegment === 'all' ? `All ${contacts.length} contacts` : newCampaign.targetSegment}</p>
+                      {newCampaign.scheduledDate && <p>📅 Scheduled: {new Date(newCampaign.scheduledDate).toLocaleString()}</p>}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setNewStep(2)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Back</button>
+                    <button onClick={() => { setShowNew(false); setNewStep(1) }} className="py-2 px-4 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Save Draft</button>
+                    <button onClick={() => { setShowNew(false); setNewStep(1) }} className="flex-1 py-2 bg-pluto-600 text-white rounded-xl text-sm font-medium hover:bg-pluto-700 flex items-center justify-center gap-1.5">
+                      <Send size={13} /> Launch Campaign
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CSV Import Modal */}
       {showImport && (

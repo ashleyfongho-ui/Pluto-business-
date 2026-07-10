@@ -1,8 +1,8 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
 import {
-  ArrowLeft, Building2, MapPin, Phone, Mail, Globe, User, Users,
-  FileText, CreditCard, StickyNote, ChevronRight, GitBranch, Edit2, Check, X
+  ArrowLeft, Building2, MapPin, Phone, Mail, Globe, User,
+  FileText, CreditCard, StickyNote, ChevronRight, GitBranch, Plus, Trash2, Settings
 } from 'lucide-react'
 import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
@@ -19,6 +19,15 @@ export default function OrganisationDetail() {
   const [tab, setTab] = useState<'overview' | 'contacts' | 'deals' | 'invoices' | 'notes' | 'tree'>('overview')
   const [editing, setEditing] = useState(false)
   const [paymentTermCustom, setPaymentTermCustom] = useState(org?.paymentTermsCustom || '')
+  const [selectedCountry, setSelectedCountry] = useState(org?.country || 'CM')
+  const [customFields, setCustomFields] = useState<{key: string; value: string}[]>(
+    Object.entries(org?.customFields || {}).map(([key, value]) => ({ key, value: String(value) }))
+  )
+  const [addingField, setAddingField] = useState(false)
+  const [newFieldKey, setNewFieldKey] = useState('')
+  const [customCity, setCustomCity] = useState('')
+  const [cityInputMode, setCityInputMode] = useState<'select' | 'custom'>('select')
+  const currentCountryData = countryOptions.find(c => c.code === selectedCountry)
 
   if (!org) return (
     <><TopBar title="Organisation not found" /><main className="p-6"><p className="text-gray-400">Organisation not found.</p></main></>
@@ -105,12 +114,28 @@ export default function OrganisationDetail() {
                   </select>
                 </div>
                 <div><p className="text-xs text-gray-400 mb-0.5">Country</p>
-                  <select className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300">
-                    {countryOptions.map(c => <option key={c.code} selected={c.code === org.country}>{c.name}</option>)}
+                  <select value={selectedCountry} onChange={e => { setSelectedCountry(e.target.value); setCityInputMode('select'); setCustomCity('') }}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                    {countryOptions.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
                   </select>
                 </div>
-                <div><p className="text-xs text-gray-400 mb-0.5">City</p>
-                  <input defaultValue={org.city} className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className="text-xs text-gray-400">City</p>
+                    <button onClick={() => setCityInputMode(m => m === 'select' ? 'custom' : 'select')}
+                      className="text-xs text-pluto-500 hover:text-pluto-700">
+                      {cityInputMode === 'select' ? '+ Custom city' : '← Pick from list'}
+                    </button>
+                  </div>
+                  {cityInputMode === 'select' ? (
+                    <select defaultValue={org.city} className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                      {currentCountryData?.cities.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  ) : (
+                    <input value={customCity} onChange={e => setCustomCity(e.target.value)}
+                      placeholder="Enter city name"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
+                  )}
                 </div>
                 <div><p className="text-xs text-gray-400 mb-0.5">Address</p>
                   <input defaultValue={org.address} className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
@@ -174,6 +199,43 @@ export default function OrganisationDetail() {
                       {systemUsers.map(u => <option key={u.id} selected={u.id === org.teamRelevance}>{u.name} — {u.role}</option>)}
                     </select>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Custom fields */}
+            <div className="col-span-2">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Settings size={14} className="text-pluto-600"/>Custom Fields</h3>
+                  <button onClick={() => setAddingField(true)} className="flex items-center gap-1 text-xs text-pluto-600 hover:text-pluto-800 font-medium">
+                    <Plus size={12} /> Add Field
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {customFields.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 w-28 shrink-0 font-medium">{f.key}</span>
+                      <input value={f.value} onChange={e => setCustomFields(prev => prev.map((x, j) => j === i ? {...x, value: e.target.value} : x))}
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pluto-300" />
+                      <button onClick={() => setCustomFields(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                  {addingField && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <input value={newFieldKey} onChange={e => setNewFieldKey(e.target.value)}
+                        placeholder="Field name (e.g. Tax Region)"
+                        className="flex-1 border border-pluto-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-pluto-300" />
+                      <button onClick={() => { if(newFieldKey.trim()) { setCustomFields(prev => [...prev, {key: newFieldKey.trim(), value: ''}]); setNewFieldKey(''); setAddingField(false) } }}
+                        className="px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-xs font-medium hover:bg-pluto-700">Add</button>
+                      <button onClick={() => { setAddingField(false); setNewFieldKey('') }} className="text-gray-400 hover:text-gray-600"><Trash2 size={14}/></button>
+                    </div>
+                  )}
+                  {customFields.length === 0 && !addingField && (
+                    <p className="text-xs text-gray-400 text-center py-2">No custom fields. Click + Add Field to create one.</p>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,8 +1,8 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
-import { ArrowLeft, Plus, Trash2, Bell, FileText, ChevronRight, Package, Wrench } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Bell, FileText, Package, Wrench, User, Calendar } from 'lucide-react'
 import TopBar from '../components/TopBar'
-import { deals, organisations, contacts, systemUsers, inventory } from '../data/mockData'
+import { deals, organisations, contacts, systemUsers } from '../data/mockData'
 
 const stageOptions = ['Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']
 const stageColors: Record<string, string> = {
@@ -20,6 +20,8 @@ export default function DealDetail() {
   const [tab, setTab] = useState<'overview' | 'quote' | 'notes' | 'reminders'>('overview')
   const [showAddLine, setShowAddLine] = useState(false)
   const [newLine, setNewLine] = useState({ type: 'product', description: '', qty: 1, unitPrice: 0 })
+  const [showAddReminder, setShowAddReminder] = useState(false)
+  const [newReminder, setNewReminder] = useState({ date: '', assignedTo: '', note: '' })
 
   if (!deal) return (
     <><TopBar title="Deal not found" /><main className="p-6"><p className="text-gray-400">Deal not found.</p></main></>
@@ -270,12 +272,59 @@ export default function DealDetail() {
         {tab === 'reminders' && (
           <div className="space-y-3">
             <div className="flex justify-end">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">
+              <button onClick={() => setShowAddReminder(s => !s)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">
                 <Bell size={13} /> Add Reminder
               </button>
             </div>
-            {deal.reminders.length === 0 ? (
+
+            {/* Add reminder form */}
+            {showAddReminder && (
+              <div className="bg-pluto-50 border border-pluto-100 rounded-xl p-4 space-y-3">
+                <p className="text-sm font-semibold text-pluto-700">New Reminder</p>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Reminder Note</label>
+                  <input
+                    value={newReminder.note}
+                    onChange={e => setNewReminder(r => ({ ...r, note: e.target.value }))}
+                    placeholder="e.g. Follow up with Jean-Pierre on revised pricing"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1"><Calendar size={10}/> Due Date</label>
+                    <input
+                      type="date"
+                      value={newReminder.date}
+                      onChange={e => setNewReminder(r => ({ ...r, date: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1"><User size={10}/> Assign To</label>
+                    <select
+                      value={newReminder.assignedTo}
+                      onChange={e => setNewReminder(r => ({ ...r, assignedTo: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300"
+                    >
+                      <option value="">Select team member…</option>
+                      {systemUsers.map(u => <option key={u.id} value={u.id}>{u.name} — {u.role}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowAddReminder(false)} className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+                  <button onClick={() => setShowAddReminder(false)} className="flex-1 px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700">
+                    Save Reminder
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {deal.reminders.length === 0 && !showAddReminder ? (
               <div className="bg-white rounded-xl shadow-sm border border-dashed border-gray-200 p-8 text-center">
+                <Bell size={24} className="mx-auto text-gray-200 mb-2" />
                 <p className="text-gray-400 text-sm">No reminders set. Add one to keep this deal moving.</p>
               </div>
             ) : (
@@ -288,7 +337,15 @@ export default function DealDetail() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{r.note}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Due: {r.date} · Assigned to: {assigned?.name}</p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <p className="text-xs text-gray-400 flex items-center gap-1"><Calendar size={10}/> {r.date}</p>
+                        {assigned && (
+                          <p className="text-xs text-gray-400 flex items-center gap-1">
+                            <div className="w-4 h-4 rounded-full bg-pluto-100 text-pluto-700 flex items-center justify-center text-xs font-bold">{assigned.avatar}</div>
+                            {assigned.name}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <button className="text-gray-300 hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
                   </div>

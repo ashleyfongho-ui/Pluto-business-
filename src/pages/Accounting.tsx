@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Link2, Bell, CheckCircle, CreditCard, RefreshCw, X, Landmark, Plus, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
+import { Link2, Bell, CheckCircle, CreditCard, RefreshCw, X, Landmark, Plus, TrendingUp, TrendingDown, Calendar, Receipt, Upload } from 'lucide-react'
 import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
-import { invoices as rawInvoices, bankTransactions as initialTxns, connectedBankAccounts, invoiceTemplates, organisations } from '../data/mockData'
+import { invoices as rawInvoices, bankTransactions as initialTxns, connectedBankAccounts, invoiceTemplates, organisations, expenses as initialExpenses } from '../data/mockData'
 
 type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue'
 type Invoice = {
@@ -47,7 +47,9 @@ export default function Accounting() {
   const fromDealValue = urlParams.get('value')
   const fromDealOrgName = fromDealOrg ? organisations.find(o => o.id === Number(fromDealOrg))?.name : null
   const [txns, setTxns] = useState(initialTxns)
-  const [tab, setTab] = useState<'invoices' | 'reconciliation' | 'forecasting'>('invoices')
+  const [tab, setTab] = useState<'invoices' | 'reconciliation' | 'forecasting' | 'expenses' | 'pl' | 'vat'>('invoices')
+  const [expensesList] = useState(initialExpenses)
+  const [showAddExpense, setShowAddExpense] = useState(false)
   const [reminderModal, setReminderModal] = useState<Invoice | null>(null)
   const [newInvoiceModal, setNewInvoiceModal] = useState(() => !!fromDealId)
   const [copied, setCopied] = useState<string | null>(null)
@@ -96,11 +98,18 @@ export default function Accounting() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-6">
-          {(['invoices', 'reconciliation', 'forecasting'] as const).map(k => (
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-6 flex-wrap">
+          {([
+            ['invoices','Invoices'],
+            ['reconciliation','Bank Rec'],
+            ['forecasting','Cash Forecast'],
+            ['expenses','Expenses'],
+            ['pl','P&L'],
+            ['vat','VAT'],
+          ] as const).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize ${tab === k ? 'bg-white shadow text-pluto-700' : 'text-gray-500 hover:text-gray-700'}`}>
-              {k === 'reconciliation' ? 'Bank Reconciliation' : k === 'forecasting' ? 'Cash Forecast' : 'Invoices'}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${tab === k ? 'bg-white shadow text-pluto-700' : 'text-gray-500 hover:text-gray-700'}`}>
+              {label}
             </button>
           ))}
         </div>
@@ -329,6 +338,209 @@ export default function Accounting() {
             </div>
           </div>
         )}
+
+        {/* EXPENSES */}
+        {tab === 'expenses' && (
+          <div className="space-y-4">
+            {/* KPIs */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Total Expenses (July)', value: expensesList.filter(e => e.date.startsWith('2026-07')).reduce((s,e)=>s+e.amount,0), color: 'text-red-500' },
+                { label: 'Approved', value: expensesList.filter(e=>e.status==='Approved').reduce((s,e)=>s+e.amount,0), color: 'text-green-600' },
+                { label: 'Pending Approval', value: expensesList.filter(e=>e.status==='Pending').reduce((s,e)=>s+e.amount,0), color: 'text-amber-600' },
+              ].map(k => (
+                <div key={k.label} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                  <p className="text-xs text-gray-400 mb-1">{k.label}</p>
+                  <p className={`text-xl font-bold ${k.color}`}>{k.value.toLocaleString()} CFA</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900">All Expenses</h2>
+                <button onClick={() => setShowAddExpense(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700">
+                  <Plus size={13}/> Add Expense
+                </button>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Date</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Category</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Description</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Amount</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">VAT</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
+                    <th className="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expensesList.map(e => (
+                    <tr key={e.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="px-4 py-3 text-gray-400 text-xs">{e.date}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{e.category}</span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{e.description}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-900">{e.amount.toLocaleString()} CFA</td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{e.vatRate > 0 ? `${e.vatRate}%` : '—'}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          e.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                        }`}>{e.status}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button className="text-xs text-gray-400 hover:text-pluto-600">
+                          <Upload size={11}/>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* P&L */}
+        {tab === 'pl' && (() => {
+          const revenue = invoices.filter(i => i.status === 'paid').reduce((s,i) => s+i.amount, 0)
+          const totalExpenses = expensesList.filter(e => e.status === 'Approved').reduce((s,e) => s+e.amount, 0)
+          const grossProfit = revenue - totalExpenses
+          const categories = [...new Set(expensesList.map(e => e.category))]
+          return (
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                  <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><TrendingUp size={11} className="text-green-500"/>Total Revenue</p>
+                  <p className="text-2xl font-bold text-green-600">{revenue.toLocaleString()} CFA</p>
+                </div>
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                  <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><TrendingDown size={11} className="text-red-500"/>Total Expenses</p>
+                  <p className="text-2xl font-bold text-red-500">{totalExpenses.toLocaleString()} CFA</p>
+                </div>
+                <div className={`rounded-xl p-5 shadow-sm border ${
+                  grossProfit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                }`}>
+                  <p className="text-xs text-gray-400 mb-1">Net Profit / (Loss)</p>
+                  <p className={`text-2xl font-bold ${grossProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>{grossProfit.toLocaleString()} CFA</p>
+                  <p className="text-xs text-gray-500 mt-1">{revenue > 0 ? Math.round((grossProfit/revenue)*100) : 0}% margin</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Income breakdown */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4">Income</h3>
+                  <div className="space-y-2">
+                    {organisations.map(org => {
+                      const orgRev = invoices.filter(i => i.orgId === org.id && i.status === 'paid').reduce((s,i)=>s+i.amount,0)
+                      return orgRev > 0 ? (
+                        <div key={org.id} className="flex justify-between text-sm">
+                          <span className="text-gray-600">{org.name}</span>
+                          <span className="font-semibold text-green-600">{orgRev.toLocaleString()} CFA</span>
+                        </div>
+                      ) : null
+                    })}
+                    <div className="flex justify-between text-sm font-bold border-t border-gray-100 pt-2">
+                      <span>Total Revenue</span><span className="text-green-600">{revenue.toLocaleString()} CFA</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expense breakdown */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4">Expenses by Category</h3>
+                  <div className="space-y-2">
+                    {categories.map(cat => {
+                      const catTotal = expensesList.filter(e => e.category === cat && e.status === 'Approved').reduce((s,e)=>s+e.amount,0)
+                      return catTotal > 0 ? (
+                        <div key={cat} className="flex items-center gap-3">
+                          <span className="text-sm text-gray-600 w-32 shrink-0">{cat}</span>
+                          <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                            <div className="h-1.5 rounded-full bg-red-400" style={{ width: `${(catTotal/totalExpenses)*100}%` }} />
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900 w-24 text-right">{catTotal.toLocaleString()}</span>
+                        </div>
+                      ) : null
+                    })}
+                    <div className="flex justify-between text-sm font-bold border-t border-gray-100 pt-2">
+                      <span>Total Expenses</span><span className="text-red-500">{totalExpenses.toLocaleString()} CFA</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-400 text-center">P&L based on paid invoices (revenue) and approved expenses. Phase 2: accrual accounting with journal entries.</p>
+            </div>
+          )
+        })()}
+
+        {/* VAT */}
+        {tab === 'vat' && (() => {
+          const VAT_RATE = 0.1925 // Cameroon TVA 19.25%
+          const vatOnSales = invoices.filter(i => i.status === 'paid').reduce((s,i) => s + Math.round(i.amount * VAT_RATE / (1 + VAT_RATE)), 0)
+          const vatOnPurchases = expensesList.filter(e => e.vatRate > 0 && e.status === 'Approved').reduce((s,e) => s + Math.round(e.amount * e.vatRate / 100), 0)
+          const vatPayable = vatOnSales - vatOnPurchases
+          return (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                  <p className="text-xs text-gray-400 mb-1">VAT Collected (Sales)</p>
+                  <p className="text-xl font-bold text-green-600">{vatOnSales.toLocaleString()} CFA</p>
+                  <p className="text-xs text-gray-400 mt-1">TVA 19.25% on paid invoices</p>
+                </div>
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                  <p className="text-xs text-gray-400 mb-1">VAT Reclaimable (Purchases)</p>
+                  <p className="text-xl font-bold text-blue-600">{vatOnPurchases.toLocaleString()} CFA</p>
+                  <p className="text-xs text-gray-400 mt-1">Input VAT on approved expenses</p>
+                </div>
+                <div className={`rounded-xl p-5 shadow-sm border ${
+                  vatPayable >= 0 ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'
+                }`}>
+                  <p className="text-xs text-gray-400 mb-1">{vatPayable >= 0 ? 'VAT Payable to DGI' : 'VAT Refund Due'}</p>
+                  <p className={`text-xl font-bold ${vatPayable >= 0 ? 'text-amber-700' : 'text-green-700'}`}>{Math.abs(vatPayable).toLocaleString()} CFA</p>
+                  <p className="text-xs text-gray-400 mt-1">Net VAT position</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <h3 className="font-semibold text-gray-900 mb-4">VAT Breakdown by Transaction</h3>
+                <div className="space-y-2 mb-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Output VAT (Sales)</p>
+                  {invoices.filter(i => i.status === 'paid').map(inv => {
+                    const vat = Math.round(inv.amount * VAT_RATE / (1 + VAT_RATE))
+                    const org = organisations.find(o => o.id === inv.orgId)
+                    return (
+                      <div key={inv.id} className="flex justify-between text-sm py-1 border-b border-gray-50">
+                        <span className="text-gray-600">{inv.id} — {org?.name}</span>
+                        <span className="font-medium text-green-600">{vat.toLocaleString()} CFA</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Input VAT (Expenses)</p>
+                  {expensesList.filter(e => e.vatRate > 0 && e.status === 'Approved').map(exp => {
+                    const vat = Math.round(exp.amount * exp.vatRate / 100)
+                    return (
+                      <div key={exp.id} className="flex justify-between text-sm py-1 border-b border-gray-50">
+                        <span className="text-gray-600">{exp.description}</span>
+                        <span className="font-medium text-blue-600">-{vat.toLocaleString()} CFA</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-xs text-amber-700 font-medium">Cameroon TVA (Taxe sur la Valeur Ajoutée) rate: 19.25% — payable quarterly to DGI. Phase 2: auto-generate DGI declaration form.</p>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
       </main>
 
       {/* Raise Invoice Modal */}

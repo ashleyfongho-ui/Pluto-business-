@@ -382,6 +382,8 @@ export const staff = [
     startDate: '2024-01-15', status: 'Active',
     phone: '+237 677 100 001', email: 'fabrice@plutobusiness.cm',
     address: 'Bastos, Yaoundé',
+    salary: 350000, payFrequency: 'Monthly', contractType: 'Permanent',
+    allowances: { transport: 30000, housing: 50000, meal: 15000 },
     promotionTarget: 'CEO by 2028. Requires P&L ownership and 3 enterprise accounts signed.',
     promises: [
       { id: 'p1', date: '2026-06-01', promise: 'Salary review in September 2026 if Q3 target hit', status: 'Pending' },
@@ -395,6 +397,8 @@ export const staff = [
     startDate: '2024-03-01', status: 'Active',
     phone: '+237 699 100 002', email: 'christelle@plutobusiness.cm',
     address: 'Akwa, Douala',
+    salary: 280000, payFrequency: 'Monthly', contractType: 'Permanent',
+    allowances: { transport: 25000, housing: 40000, meal: 12000 },
     promotionTarget: 'COO when company reaches 10 staff.',
     promises: [{ id: 'p3', date: '2026-03-01', promise: 'Training budget CFA 150,000 for 2026', status: 'Fulfilled' }],
     notes: 'Detail-oriented. Manages logistics team well.',
@@ -405,6 +409,8 @@ export const staff = [
     startDate: '2024-06-01', status: 'Active',
     phone: '+237 655 100 003', email: 'rodrigue@plutobusiness.cm',
     address: 'Bali, Douala',
+    salary: 180000, payFrequency: 'Monthly', contractType: 'Permanent',
+    allowances: { transport: 20000, housing: 0, meal: 10000 },
     promotionTarget: 'Logistics Manager when team grows to 3 drivers.',
     promises: [],
     notes: 'Had documentation issues in March. Retrained. Back on track.',
@@ -415,6 +421,8 @@ export const staff = [
     startDate: '2024-02-15', status: 'On Leave',
     phone: '+237 677 100 004', email: 'nathalie@plutobusiness.cm',
     address: 'Bastos, Yaoundé',
+    salary: 220000, payFrequency: 'Monthly', contractType: 'Permanent',
+    allowances: { transport: 20000, housing: 30000, meal: 10000 },
     promotionTarget: 'Finance Manager when accounting module goes live.',
     promises: [{ id: 'p4', date: '2026-02-15', promise: 'Part-time Fridays arrangement reviewed annually', status: 'Active' }],
     notes: 'On annual leave 7–18 July. Very reliable. Handles all banking and reconciliation.',
@@ -425,6 +433,8 @@ export const staff = [
     startDate: '2025-01-10', status: 'Active',
     phone: '+237 699 100 005', email: 'bruno@plutobusiness.cm',
     address: 'Bonamoussadi, Douala',
+    salary: 150000, payFrequency: 'Monthly', contractType: 'Permanent',
+    allowances: { transport: 20000, housing: 0, meal: 8000 },
     promotionTarget: 'Senior Sales Rep if 3 deals closed in Q3.',
     promises: [],
     notes: 'Verbal warning for punctuality in May. Improving. Good with clients once in front of them.',
@@ -435,11 +445,31 @@ export const staff = [
     startDate: '2024-04-01', status: 'Active',
     phone: '+237 655 100 006', email: 'sylvie@plutobusiness.cm',
     address: 'Nlongkak, Yaoundé',
+    salary: 200000, payFrequency: 'Monthly', contractType: 'Permanent',
+    allowances: { transport: 20000, housing: 25000, meal: 10000 },
     promotionTarget: 'Head of People when company reaches 15 staff.',
     promises: [{ id: 'p5', date: '2026-04-01', promise: 'Remote work Mondays approved from July 2026', status: 'Active' }],
     notes: 'Keeps the office running. Essential.',
     benefits: { healthScan: true, healthScanDate: '2026-06-01' },
   },
+]
+
+// ─── PAYROLL HISTORY ──────────────────────────────────────────────────────────────
+export const payrollRuns = [
+  { id: 'PR-2026-06', month: 'June 2026', runDate: '2026-06-28', status: 'Paid', totalGross: 1390000, totalNet: 1156450, staffCount: 6 },
+  { id: 'PR-2026-05', month: 'May 2026', runDate: '2026-05-30', status: 'Paid', totalGross: 1390000, totalNet: 1156450, staffCount: 6 },
+  { id: 'PR-2026-04', month: 'April 2026', runDate: '2026-04-29', status: 'Paid', totalGross: 1340000, totalNet: 1114850, staffCount: 5 },
+]
+
+// ─── EXPENSES ─────────────────────────────────────────────────────────────────────
+export const expenses = [
+  { id: 'EXP-001', date: '2026-07-05', category: 'Rent', description: 'Office rent July 2026', amount: 150000, vatRate: 0, paidBy: 'u1', receipt: null, status: 'Approved' },
+  { id: 'EXP-002', date: '2026-07-03', category: 'Transport', description: 'Fuel for DEL-002 + DEL-003', amount: 35000, vatRate: 19.25, paidBy: 'u3', receipt: null, status: 'Approved' },
+  { id: 'EXP-003', date: '2026-07-02', category: 'Supplies', description: 'Office supplies & printing', amount: 18500, vatRate: 19.25, paidBy: 'u2', receipt: null, status: 'Approved' },
+  { id: 'EXP-004', date: '2026-07-08', category: 'Marketing', description: 'Airtime for WhatsApp campaign', amount: 12000, vatRate: 0, paidBy: 'u1', receipt: null, status: 'Pending' },
+  { id: 'EXP-005', date: '2026-07-01', category: 'Utilities', description: 'Electricity bill Q2', amount: 45000, vatRate: 19.25, paidBy: 'u2', receipt: null, status: 'Approved' },
+  { id: 'EXP-006', date: '2026-06-28', category: 'Payroll', description: 'Staff salaries June 2026', amount: 1390000, vatRate: 0, paidBy: 'u1', receipt: null, status: 'Approved' },
+  { id: 'EXP-007', date: '2026-06-28', category: 'CNPS', description: 'CNPS employer contributions June', amount: 218192, vatRate: 0, paidBy: 'u1', receipt: null, status: 'Approved' },
 ]
 
 export const leaveRequests = [

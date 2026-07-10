@@ -6,9 +6,12 @@ import {
 } from 'lucide-react'
 import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
+import { useApp, businessTypeConfig, BusinessType } from '../context/AppContext'
 import { systemUsers, staff } from '../data/mockData'
 
 type Tab = 'company' | 'users' | 'integrations' | 'notifications' | 'security' | 'billing'
+
+const businessTypes = Object.entries(businessTypeConfig) as [BusinessType, typeof businessTypeConfig[BusinessType]][]
 
 const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: 'company', label: 'Company', icon: Building2 },
@@ -79,6 +82,7 @@ const roleColors: Record<string, string> = {
 
 export default function Settings() {
   const { t } = useLang()
+  const { businessType, setBusinessType } = useApp()
   const [tab, setTab] = useState<Tab>('company')
   const [saved, setSaved] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -191,6 +195,31 @@ export default function Settings() {
                       </select>
                     </div>
                   </div>
+                  {/* Business Type */}
+                  <div className="col-span-2 mt-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-2">Business Type — sets Inventory mode across the platform</label>
+                    <div className="grid grid-cols-5 gap-2">
+                      {businessTypes.map(([key, cfg]) => (
+                        <button key={key} onClick={() => setBusinessType(key)}
+                          className={`p-3 rounded-xl border-2 text-left transition-all ${
+                            businessType === key
+                              ? 'border-pluto-500 bg-pluto-50 ring-2 ring-offset-1 ring-pluto-300'
+                              : 'border-gray-100 hover:border-gray-200'
+                          }`}>
+                          <span className="text-xl">{cfg.emoji}</span>
+                          <p className="text-xs font-semibold text-gray-900 mt-1 leading-tight">{cfg.label}</p>
+                          <p className="text-xs text-gray-400 mt-0.5 leading-tight">{cfg.description.split('—')[0]}</p>
+                          {businessType === key && (
+                            <span className="mt-1.5 inline-flex items-center gap-0.5 text-xs text-pluto-600 font-semibold">
+                              <Check size={10} /> Active
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">This changes how Inventory, Reports, and Pipeline display throughout Pluto Business.</p>
+                  </div>
+
                   <div className="mt-4">
                     <label className="block text-xs font-medium text-gray-500 mb-1">Company Address</label>
                     <textarea

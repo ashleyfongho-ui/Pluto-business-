@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
-import { campaigns, campaignTemplates, contacts, organisations } from '../data/mockData'
-import { Upload, X, Megaphone, MessageSquare, Mail, Users, BarChart2, Send, ChevronRight, Plus } from 'lucide-react'
+import { campaigns, campaignTemplates, contacts, organisations, inventory } from '../data/mockData'
+import { Upload, X, Megaphone, MessageSquare, Mail, Users, BarChart2, Send, ChevronRight, Plus, Package, Eye, Clock, CheckCircle } from 'lucide-react'
 
 const statusColors: Record<string, string> = {
   Active: 'bg-green-100 text-green-700',
@@ -22,6 +22,7 @@ export default function Campaigns() {
     subject: '',
     message: '',
     scheduledDate: '',
+    linkedProduct: '',
   })
 
   return (
@@ -204,11 +205,23 @@ export default function Campaigns() {
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
                     <p className="text-xs text-gray-400 mt-1">Leave blank to save as draft</p>
                   </div>
+                  {/* Link to product */}
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1"><Package size={10}/> Link to Inventory Item (optional)</label>
+                    <select value={newCampaign.linkedProduct} onChange={e => setNewCampaign(c => ({...c, linkedProduct: e.target.value}))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                      <option value="">— No product link</option>
+                      {inventory.map(item => <option key={item.id} value={item.name}>{item.name} ({item.sku})</option>)}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">Linked campaigns appear on the product page in Inventory</p>
+                  </div>
+
                   <div className="bg-pluto-50 rounded-xl p-4 border border-pluto-100">
                     <p className="text-xs font-semibold text-pluto-700 mb-2">Campaign Summary</p>
                     <div className="space-y-1 text-xs text-gray-600">
                       <p>📢 <strong>{newCampaign.name}</strong> via {newCampaign.type}</p>
                       <p>👥 {newCampaign.targetSegment === 'all' ? `All ${contacts.length} contacts` : newCampaign.targetSegment}</p>
+                      {newCampaign.linkedProduct && <p><Package size={10} className="inline mr-1"/>{newCampaign.linkedProduct}</p>}
                       {newCampaign.scheduledDate && <p>📅 Scheduled: {new Date(newCampaign.scheduledDate).toLocaleString()}</p>}
                     </div>
                   </div>

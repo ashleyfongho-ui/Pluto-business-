@@ -1,9 +1,10 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
-import { ArrowLeft, Package, TrendingUp, TrendingDown, MapPin, Calendar, DollarSign, User, Megaphone } from 'lucide-react'
+import { ArrowLeft, Package, TrendingUp, TrendingDown, MapPin, Calendar, DollarSign, User, Megaphone, Barcode, Printer } from 'lucide-react'
 import TopBar from '../components/TopBar'
 import { useApp, businessTypeConfig } from '../context/AppContext'
 import { inventory, campaigns, systemUsers } from '../data/mockData'
+import { BarcodeDisplay, PrintLabelModal } from '../components/BarcodeDisplay'
 
 const locationColors: Record<string, string> = {
   'Warehouse': 'bg-blue-100 text-blue-700',
@@ -21,7 +22,8 @@ export default function InventoryDetail() {
   const { businessType } = useApp()
   const cfg = businessTypeConfig[businessType]
   const item = inventory.find(i => i.id === Number(id))
-  const [tab, setTab] = useState<'overview' | 'batches' | 'campaigns'>('overview')
+  const [tab, setTab] = useState<'overview' | 'batches' | 'barcode' | 'campaigns'>('overview')
+  const [showPrint, setShowPrint] = useState(false)
 
   if (!item) return (
     <><TopBar title="Item not found" /><main className="p-6"><p className="text-gray-400">Item not found.</p></main></>
@@ -45,6 +47,7 @@ export default function InventoryDetail() {
   const tabs = [
     { key: 'overview', label: 'Overview' },
     { key: 'batches', label: `Batches (${item.batches.length})` },
+    { key: 'barcode', label: 'Barcodes' },
     { key: 'campaigns', label: `Campaigns (${linkedCampaigns.length})` },
   ] as const
 
@@ -72,8 +75,20 @@ export default function InventoryDetail() {
                 </div>
               </div>
             </div>
-            <div className="text-right">
+            <div className="flex items-center gap-2">
               {isLow && <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full font-medium">Low Stock</span>}
+              <button
+                onClick={() => setShowPrint(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-pluto-200 text-pluto-600 rounded-lg text-xs font-medium hover:bg-pluto-50"
+              >
+                <Printer size={13} /> Print Labels
+              </button>
+              <button
+                onClick={() => setTab('barcode')}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50"
+              >
+                <Barcode size={13} /> View Barcodes
+              </button>
             </div>
           </div>
 
@@ -230,6 +245,49 @@ export default function InventoryDetail() {
           </div>
         )}
 
+        {/* BARCODES */}
+        {tab === 'barcode' && (
+          <div className="space-y-4">
+            {/* SKU barcode */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Product SKU Barcode</h3>
+                <button
+                  onClick={() => setShowPrint(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-xs font-medium hover:bg-pluto-700"
+                >
+                  <Printer size={12} /> Print Labels
+                </button>
+              </div>
+              <div className="flex justify-center">
+                <BarcodeDisplay value={item.sku} label={item.name} height={80} />
+              </div>
+            </div>
+
+            {/* Per-batch barcodes */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Batch Barcodes</h3>
+              <div className="grid grid-cols-2 gap-6">
+                {item.batches.map(b => (
+                  <div key={b.batchId} className="border border-gray-100 rounded-xl p-4 flex flex-col items-center gap-3">
+                    <div className="w-full">
+                      <BarcodeDisplay value={b.batchId} label={b.batchId} height={60} compact={false} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-400">Purchased {b.purchaseDate}</p>
+                      <p className="text-xs text-gray-400">{b.totalUnits - b.soldUnits} {cfg.unitLabel} remaining</p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      b.location === 'Warehouse' ? 'bg-blue-100 text-blue-700' :
+                      b.location === 'In Transit' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                    }`}>{b.location}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* CAMPAIGNS */}
         {tab === 'campaigns' && (
           <div className="space-y-3">
@@ -268,6 +326,16 @@ export default function InventoryDetail() {
           </div>
         )}
       </main>
+
+      {showPrint && (
+        <PrintLabelModal
+          items={[
+            { sku: item.sku, name: item.name, price: item.batches[0]?.sellPerUnit },
+            ...item.batches.map(b => ({ sku: item.sku, name: item.name, batchId: b.batchId, price: b.sellPerUnit }))
+          ]}
+          onClose={() => setShowPrint(false)}
+        />
+      )}
     </>
   )
 }

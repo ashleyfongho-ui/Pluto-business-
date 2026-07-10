@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
+import HelpPanel from './HelpPanel'
 
 export default function Layout() {
   return (
@@ -8,6 +9,7 @@ export default function Layout() {
       <div className="ml-56 pt-14">
         <Outlet />
       </div>
+      <HelpPanel />
     </div>
   )
 }

@@ -11,6 +11,7 @@ import Pipeline from './pages/Pipeline'
 import DealDetail from './pages/DealDetail'
 import Invoices from './pages/Invoices'
 import Inventory from './pages/Inventory'
+import InventoryDetail from './pages/InventoryDetail'
 import Logistics from './pages/Logistics'
 import Campaigns from './pages/Campaigns'
 import Reports from './pages/Reports'
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/pipeline/:id" element={<DealDetail />} />
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/inventory" element={<Inventory />} />
+            <Route path="/inventory/:id" element={<InventoryDetail />} />
             <Route path="/logistics" element={<Logistics />} />
             <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/reports" element={<Reports />} />

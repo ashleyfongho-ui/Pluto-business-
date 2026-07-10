@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
 import { useApp } from '../context/AppContext'
@@ -33,6 +34,7 @@ export default function Inventory() {
   const { t } = useLang()
   const { businessType } = useApp()
   const cfg = businessTypeConfig[businessType]
+  const navigate = useNavigate()
 
   const [filter, setFilter] = useState<'all' | 'expiring' | 'low' | 'transit' | 'waste'>('all')
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
@@ -208,13 +210,13 @@ export default function Inventory() {
 
                   return (
                     <>
-                      <tr key={item.id} onClick={() => toggleExpand(item.id)}
+                      <tr key={item.id}
                         className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer">
-                        <td className="px-4 py-3 text-gray-400">
+                        <td className="px-4 py-3 text-gray-400" onClick={() => toggleExpand(item.id)}>
                           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs text-pluto-600">{item.sku}</td>
-                        <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-pluto-600 underline decoration-dotted" onClick={() => navigate(`/inventory/${item.id}`)}>{item.sku}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900 group-hover:text-pluto-700" onClick={() => navigate(`/inventory/${item.id}`)}>{item.name}</td>
                         <td className="px-4 py-3 text-gray-500">{item.category}</td>
                         <td className="px-4 py-3 text-gray-500">{item.batches.length}</td>
                         <td className="px-4 py-3 text-gray-900 font-medium">{totalUnits.toLocaleString()} {cfg.unitLabel}</td>

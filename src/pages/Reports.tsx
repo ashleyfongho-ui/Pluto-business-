@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
-import { useApp } from '../context/AppContext'
-import { inventory, deliveries, staff, leaveRequests, disciplinaryLog } from '../data/mockData'
-import { TrendingUp, TrendingDown, Minus, Download } from 'lucide-react'
+import { useApp, businessTypeConfig } from '../context/AppContext'
+import { inventory, deliveries, staff, leaveRequests, disciplinaryLog, campaigns } from '../data/mockData'
+import { TrendingUp, TrendingDown, Minus, Download, Mail, MessageSquare, MousePointer, Eye, Users, BarChart2 } from 'lucide-react'
 
 const dateRanges = ['This Week', 'This Month', 'Last Month', 'This Quarter']
 
@@ -56,8 +56,9 @@ function ProgressRow({ label, value, max, color }: { label: string; value: numbe
 
 export default function Reports() {
   const { t } = useLang()
-  const { deals, invoices, organisations, contacts } = useApp()
-  const [tab, setTab] = useState<'sales' | 'profitability' | 'inventory' | 'logistics' | 'staff' | 'pipeline'>('sales')
+  const { deals, invoices, organisations, contacts, businessType } = useApp()
+  const cfg = businessTypeConfig[businessType]
+  const [tab, setTab] = useState<'sales' | 'profitability' | 'inventory' | 'logistics' | 'staff' | 'pipeline' | 'campaigns'>('sales')
   const [range, setRange] = useState('This Month')
 
   // ─── Sales calcs ───────────────────────────────────────────────────────────
@@ -143,13 +144,26 @@ export default function Reports() {
   // Highest cost items
   const highestCostItems = [...productMargins].sort((a, b) => b.cost - a.cost)
 
+  // ─── Campaign calcs ──────────────────────────────────────────────────────────────
+  const totalSent = campaigns.reduce((s, c) => s + c.sent, 0)
+  const totalOpened = campaigns.reduce((s, c) => s + (c.opened || 0), 0)
+  const totalClicks = campaigns.reduce((s, c) => s + (c.clicks || 0), 0)
+  const openRate = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0
+  const clickRate = totalOpened > 0 ? Math.round((totalClicks / totalOpened) * 100) : 0
+  const conversionRate = totalClicks > 0 ? Math.round((wonDeals.length / totalClicks) * 100) : 0
+  const bestCampaign = [...campaigns].sort((a, b) => (b.clicks || 0) - (a.clicks || 0))[0]
+
+  // Business-type adapted inventory label
+  const inventoryTabLabel = businessType === 'services' ? 'Capacity' : cfg.stockLabel
+
   const tabs = [
     { key: 'sales', label: 'Sales' },
     { key: 'profitability', label: 'Profitability' },
-    { key: 'inventory', label: 'Inventory' },
-    { key: 'logistics', label: 'Logistics' },
+    { key: 'inventory', label: inventoryTabLabel },
+    { key: 'logistics', label: 'Logistics', hidden: !cfg.showLogistics },
     { key: 'staff', label: 'Staff' },
     { key: 'pipeline', label: 'Pipeline' },
+    { key: 'campaigns', label: 'Campaigns' },
   ] as const
 
   return (
@@ -173,8 +187,8 @@ export default function Reports() {
 
         {/* Section tabs */}
         <div className="flex gap-1.5 flex-wrap mb-6">
-          {tabs.map(t_ => (
-            <button key={t_.key} onClick={() => setTab(t_.key)}
+          {tabs.filter(t_ => !('hidden' in t_ && t_.hidden)).map(t_ => (
+            <button key={t_.key} onClick={() => setTab(t_.key as typeof tab)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border-2 ${tab === t_.key ? 'bg-pluto-600 text-white border-pluto-600 shadow-sm' : 'bg-white text-gray-600 border-gray-100 hover:border-pluto-200 hover:text-pluto-700'}`}>
               {t_.label}
             </button>
@@ -519,6 +533,134 @@ export default function Reports() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ─── CAMPAIGNS ─── */}
+        {tab === 'campaigns' && (
+          <div className="space-y-4">
+            {/* KPIs */}
+            <div className="grid grid-cols-4 gap-3">
+              <KPICard label="Total Sent" value={totalSent.toLocaleString()} sub={`${campaigns.length} campaigns`} color="text-pluto-700" />
+              <KPICard label="Open Rate" value={`${openRate}%`} sub={`${totalOpened.toLocaleString()} opened`} color={openRate >= 30 ? 'text-green-600' : 'text-amber-600'} trend={openRate >= 30 ? 'up' : 'flat'} />
+              <KPICard label="Click-through Rate" value={`${clickRate}%`} sub={`${totalClicks} clicks`} color={clickRate >= 20 ? 'text-green-600' : 'text-amber-600'} trend={clickRate >= 20 ? 'up' : 'flat'} />
+              <KPICard label="Conversion Rate" value={`${conversionRate}%`} sub="clicks → won deals" color={conversionRate > 0 ? 'text-pluto-700' : 'text-gray-500'} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Per campaign breakdown */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2"><BarChart2 size={15} className="text-pluto-600" />Campaign Performance</h3>
+                <div className="space-y-4">
+                  {campaigns.map(c => {
+                    const cOpenRate = c.sent > 0 ? Math.round(((c.opened || 0) / c.sent) * 100) : 0
+                    const cClickRate = (c.opened || 0) > 0 ? Math.round(((c.clicks || 0) / (c.opened || 1)) * 100) : 0
+                    const typeIcon = c.type === 'WhatsApp' ? MessageSquare : c.type === 'Email' ? Mail : Users
+                    const TypeIcon = typeIcon
+                    return (
+                      <div key={c.id} className="border border-gray-100 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <TypeIcon size={13} className={c.type === 'WhatsApp' ? 'text-green-600' : 'text-blue-600'} />
+                            <p className="font-medium text-gray-900 text-sm">{c.name}</p>
+                          </div>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            c.status === 'Active' ? 'bg-green-100 text-green-700' :
+                            c.status === 'Completed' ? 'bg-gray-100 text-gray-600' : 'bg-amber-100 text-amber-700'
+                          }`}>{c.status}</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          {[
+                            { label: 'Sent', value: c.sent, icon: Mail },
+                            { label: 'Opened', value: c.opened || 0, pct: cOpenRate, icon: Eye },
+                            { label: 'Clicked', value: c.clicks || 0, pct: cClickRate, icon: MousePointer },
+                            { label: 'Responses', value: Math.round((c.opened || 0) * 0.12), pct: Math.round(((c.opened || 0) * 0.12 / Math.max(c.sent,1)) * 100), icon: Users },
+                          ].map(m => (
+                            <div key={m.label} className="bg-gray-50 rounded-lg p-2">
+                              <p className="text-lg font-bold text-gray-900">{m.value}</p>
+                              {m.pct !== undefined && <p className="text-xs text-pluto-600 font-semibold">{m.pct}%</p>}
+                              <p className="text-xs text-gray-400">{m.label}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between text-xs text-gray-400 mb-0.5">
+                            <span>Open rate</span><span>{cOpenRate}%</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-1.5">
+                            <div className="h-1.5 rounded-full bg-pluto-500" style={{ width: `${cOpenRate}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Channel comparison + response rates */}
+              <div className="space-y-4">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4">Performance by Channel</h3>
+                  {(['Email', 'WhatsApp'] as const).map(channel => {
+                    const chCampaigns = campaigns.filter(c => c.type === 'WhatsApp' ? channel === 'WhatsApp' : channel === 'Email')
+                    const chSent = chCampaigns.reduce((s, c) => s + c.sent, 0)
+                    const chOpened = chCampaigns.reduce((s, c) => s + (c.opened || 0), 0)
+                    const chClicks = chCampaigns.reduce((s, c) => s + (c.clicks || 0), 0)
+                    const chOpen = chSent > 0 ? Math.round((chOpened / chSent) * 100) : 0
+                    const chClick = chOpened > 0 ? Math.round((chClicks / chOpened) * 100) : 0
+                    return (
+                      <div key={channel} className={`p-4 rounded-xl border mb-3 ${
+                        channel === 'WhatsApp' ? 'border-green-100 bg-green-50' : 'border-blue-100 bg-blue-50'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-3">
+                          {channel === 'WhatsApp' ? <MessageSquare size={14} className="text-green-600" /> : <Mail size={14} className="text-blue-600" />}
+                          <p className="font-semibold text-gray-900 text-sm">{channel}</p>
+                          <span className="text-xs text-gray-400 ml-auto">{chCampaigns.length} campaign{chCampaigns.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div><p className="font-bold text-gray-900">{chSent}</p><p className="text-xs text-gray-400">Sent</p></div>
+                          <div><p className="font-bold text-gray-900">{chOpen}%</p><p className="text-xs text-gray-400">Open rate</p></div>
+                          <div><p className="font-bold text-gray-900">{chClick}%</p><p className="text-xs text-gray-400">CTR</p></div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                  <h3 className="font-semibold text-gray-900 mb-3">Conversion Funnel</h3>
+                  {[
+                    { label: 'Sent', value: totalSent, color: '#7c3aed' },
+                    { label: 'Opened', value: totalOpened, color: '#6d28d9' },
+                    { label: 'Clicked', value: totalClicks, color: '#4c1d95' },
+                    { label: 'Responded', value: Math.round(totalClicks * 0.35), color: '#2e1065' },
+                    { label: 'Won Deal', value: wonDeals.length, color: '#10b981' },
+                  ].map((step, i, arr) => {
+                    const pct = arr[0].value > 0 ? Math.round((step.value / arr[0].value) * 100) : 0
+                    return (
+                      <div key={step.label} className="flex items-center gap-3 mb-2">
+                        <span className="text-xs text-gray-500 w-20 shrink-0">{step.label}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                          <div className="h-4 rounded-full flex items-center justify-end pr-2" style={{ width: `${Math.max(pct, 2)}%`, background: step.color }}>
+                            <span className="text-xs text-white font-semibold">{step.value}</span>
+                          </div>
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 w-8">{pct}%</span>
+                      </div>
+                    )
+                  })}
+                  <p className="text-xs text-gray-400 mt-2">End-to-end funnel from send → won deal</p>
+                </div>
+
+                {bestCampaign && (
+                  <div className="bg-pluto-50 rounded-xl border border-pluto-100 p-4">
+                    <p className="text-xs font-semibold text-pluto-700 mb-1">🏆 Best Performing</p>
+                    <p className="font-semibold text-gray-900">{bestCampaign.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{bestCampaign.clicks || 0} clicks · {bestCampaign.type} · {bestCampaign.status}</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </main>

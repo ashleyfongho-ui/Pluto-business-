@@ -39,10 +39,17 @@ const forecastData = [
 export default function Accounting() {
   const { t } = useLang()
   const [invoices, setInvoices] = useState(initialInvoices)
+
+  // Pre-fill from deal conversion
+  const urlParams = new URLSearchParams(window.location.search)
+  const fromDealId = urlParams.get('fromDeal')
+  const fromDealOrg = urlParams.get('org')
+  const fromDealValue = urlParams.get('value')
+  const fromDealOrgName = fromDealOrg ? organisations.find(o => o.id === Number(fromDealOrg))?.name : null
   const [txns, setTxns] = useState(initialTxns)
   const [tab, setTab] = useState<'invoices' | 'reconciliation' | 'forecasting'>('invoices')
   const [reminderModal, setReminderModal] = useState<Invoice | null>(null)
-  const [newInvoiceModal, setNewInvoiceModal] = useState(false)
+  const [newInvoiceModal, setNewInvoiceModal] = useState(() => !!fromDealId)
   const [copied, setCopied] = useState<string | null>(null)
 
   const markPaid = (id: string) => {
@@ -329,14 +336,17 @@ export default function Accounting() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Raise New Invoice</h3>
+              <div>
+                <h3 className="font-semibold text-gray-900">Raise New Invoice</h3>
+                {fromDealId && <p className="text-xs text-green-600 mt-0.5">✓ Pre-filled from Deal #{fromDealId}</p>}
+              </div>
               <button onClick={() => setNewInvoiceModal(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
             <div className="space-y-3 mb-4">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Organisation</label>
-                <select className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300">
-                  {organisations.map(o => <option key={o.id}>{o.name}</option>)}
+                <select defaultValue={fromDealOrgName || ''} className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                  {organisations.map(o => <option key={o.id} value={o.name} selected={o.name === fromDealOrgName}>{o.name}</option>)}
                 </select>
               </div>
               <div>
@@ -348,7 +358,7 @@ export default function Accounting() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Issue Date</label>
-                  <input type="date" defaultValue="2026-07-09" className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
+                  <input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Due Date</label>
@@ -357,11 +367,11 @@ export default function Accounting() {
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Description</label>
-                <textarea rows={2} placeholder="What is this invoice for?" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300 resize-none" />
+                <textarea rows={2} defaultValue={fromDealId ? `Invoice from Deal #${fromDealId}` : ''} placeholder="What is this invoice for?" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300 resize-none" />
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Amount (CFA)</label>
-                <input type="number" placeholder="0" className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
+                <input type="number" defaultValue={fromDealValue || ''} placeholder="0" className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
               </div>
             </div>
             <div className="flex gap-2">

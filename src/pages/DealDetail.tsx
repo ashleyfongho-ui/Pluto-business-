@@ -95,7 +95,7 @@ export default function DealDetail() {
                 <FileText size={13} /> Send Contract
               </button>
               <button
-                onClick={() => navigate('/invoices')}
+                onClick={() => navigate(`/accounting?fromDeal=${deal.id}&org=${deal.orgId}&value=${totalValue}`)}
                 className="px-4 py-2 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors flex items-center gap-1.5">
                 <FileText size={13} /> Convert to Invoice
               </button>
@@ -242,7 +242,7 @@ export default function DealDetail() {
               <button className="px-4 py-2 border border-pluto-200 text-pluto-600 rounded-lg text-sm font-medium hover:bg-pluto-50 transition-colors">
                 Download Quote PDF
               </button>
-              <button onClick={() => navigate('/invoices')}
+              <button onClick={() => navigate(`/accounting?fromDeal=${deal.id}&org=${deal.orgId}&value=${totalValue}`)}
                 className="px-4 py-2 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors flex items-center gap-1.5">
                 <FileText size={13} /> Convert to Invoice →
               </button>

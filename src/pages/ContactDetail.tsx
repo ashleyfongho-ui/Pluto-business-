@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
 import { ArrowLeft, Phone, Mail, MapPin, MessageCircle, Send, StickyNote, Building2 } from 'lucide-react'
 import TopBar from '../components/TopBar'
-import { contacts, organisations, systemUsers } from '../data/mockData'
+import { contacts, organisations, systemUsers, campaigns } from '../data/mockData'
 
 const convTypeColors: Record<string, string> = {
   WhatsApp: 'bg-green-100 text-green-700',
@@ -140,31 +140,49 @@ export default function ContactDetail() {
                 </div>
               )}
 
-              {/* Timeline */}
-              <div className="divide-y divide-gray-50">
-                {contact.conversations.length === 0 ? (
-                  <p className="text-center text-gray-400 text-sm py-8">No interactions logged yet.</p>
-                ) : (
-                  contact.conversations.map(cv => {
-                    const user = systemUsers.find(u => u.id === cv.user)
-                    return (
-                      <div key={cv.id} className="px-5 py-4 hover:bg-gray-50">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${convTypeColors[cv.type] || 'bg-gray-100 text-gray-600'}`}>
-                            {cv.type}
-                          </span>
-                          <span className={`text-xs ${cv.direction === 'inbound' ? 'text-blue-500' : cv.direction === 'outbound' ? 'text-pluto-500' : 'text-amber-500'}`}>
-                            {cv.direction === 'inbound' ? '← Inbound' : cv.direction === 'outbound' ? '→ Outbound' : '↔ Meeting'}
-                          </span>
-                          <span className="text-xs text-gray-400 ml-auto">{cv.date}</span>
-                          {user && <span className="text-xs text-gray-400">· {user.name}</span>}
-                        </div>
-                        <p className="text-sm text-gray-700">{cv.summary}</p>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
+              {/* Timeline — manual convos + campaign comms */}
+              {(() => {
+                // Inject campaign comms as conversation entries
+                const campaignEntries = campaigns
+                  .filter(c => c.status !== 'Draft' && c.sent > 0)
+                  .slice(0, 2)
+                  .map((c, i) => ({
+                    id: `camp-${c.id}`,
+                    date: c.date + ' 09:00',
+                    type: c.type,
+                    direction: 'outbound',
+                    summary: `Campaign: "${c.name}" — ${c.sent} sent, ${c.opened || 0} opened, ${c.clicks || 0} clicked`,
+                    user: 'u1',
+                    isCampaign: true,
+                  }))
+                const allEntries = [...(contact.conversations as typeof campaignEntries), ...campaignEntries]
+                  .sort((a, b) => b.date.localeCompare(a.date))
+                return (
+                  <div className="divide-y divide-gray-50">
+                    {allEntries.length === 0 ? (
+                      <p className="text-center text-gray-400 text-sm py-8">No interactions logged yet.</p>
+                    ) : (
+                      allEntries.map(cv => {
+                        const user = systemUsers.find(u => u.id === cv.user)
+                        const isCamp = 'isCampaign' in cv && cv.isCampaign
+                        return (
+                          <div key={cv.id} className={`px-5 py-4 hover:bg-gray-50 ${isCamp ? 'bg-violet-50/40' : ''}`}>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              {isCamp && <span className="px-2 py-0.5 bg-violet-100 text-violet-700 rounded-full text-xs font-medium">📢 Campaign</span>}
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${convTypeColors[cv.type] || 'bg-gray-100 text-gray-600'}`}>
+                                {cv.type}
+                              </span>
+                              <span className="text-xs text-gray-400 ml-auto">{cv.date}</span>
+                              {user && <span className="text-xs text-gray-400">· {user.name}</span>}
+                            </div>
+                            <p className="text-sm text-gray-700">{cv.summary}</p>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                )
+              })()}
             </div>
 
             {/* WhatsApp note */}

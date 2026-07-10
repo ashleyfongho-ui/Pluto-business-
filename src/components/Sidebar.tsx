@@ -10,7 +10,6 @@ const navItems = [
   { path: '/organisations', icon: Building2, key: 'organisations' },
   { path: '/contacts', icon: Users, key: 'contacts' },
   { path: '/pipeline', icon: GitBranch, key: 'pipeline' },
-  { path: '/invoices', icon: FileText, key: 'invoices' },
   { path: '/accounting', icon: Landmark, key: 'accounting' },
   { path: '/inventory', icon: Package, key: 'inventory' },
   { path: '/logistics', icon: Truck, key: 'logistics' },

@@ -20,13 +20,41 @@ type SearchResult = {
   route: string
 }
 
-const notifications = [
-  { id: 1, icon: '🔴', text: 'INV-002 is 5 days overdue', sub: 'Moda Distribution · 450,000 CFA', time: '2h ago', read: false },
-  { id: 2, icon: '⚠️', text: 'Ibuprofen 400mg — low stock (8 remaining)', sub: 'Below threshold of 20 units', time: '4h ago', read: false },
-  { id: 3, icon: '✅', text: 'Deal won: Kamga Restocking', sub: '175,000 CFA · Bruno Manga', time: '1d ago', read: true },
-  { id: 4, icon: '📅', text: 'Reminder: Send Q3 pricing to Jean-Pierre', sub: 'Pharma Plus — due today', time: 'Today', read: false },
-  { id: 5, icon: '💬', text: 'New WhatsApp from Paul Mbarga', sub: 'Moda Distribution — delivery schedule', time: 'Yesterday', read: true },
-]
+import { invoices as rawInvoices, inventory as rawInventory, deals as rawDeals } from '../data/mockData'
+
+function buildNotifications() {
+  const notes: { id: number; icon: string; text: string; sub: string; time: string; read: boolean }[] = []
+  let id = 1
+  // Overdue invoices
+  rawInvoices.filter(i => i.status === 'overdue').forEach(inv => {
+    notes.push({ id: id++, icon: '🔴', text: `${inv.id} is overdue`, sub: `${inv.amount.toLocaleString()} CFA`, time: '2h ago', read: false })
+  })
+  // Low stock
+  rawInventory.forEach(item => {
+    const total = item.batches.reduce((s, b) => s + b.totalUnits, 0)
+    const sold = item.batches.reduce((s, b) => s + b.soldUnits, 0)
+    if ((total - sold) <= item.lowStockThreshold) {
+      notes.push({ id: id++, icon: '⚠️', text: `${item.name} — low stock`, sub: `${total - sold} remaining (threshold: ${item.lowStockThreshold})`, time: '4h ago', read: false })
+    }
+  })
+  // Deal reminders due
+  rawDeals.forEach(d => {
+    d.reminders?.forEach(r => {
+      const due = new Date(r.date)
+      const today = new Date()
+      if (due <= new Date(today.getTime() + 2 * 86400000)) {
+        notes.push({ id: id++, icon: '📅', text: r.note, sub: `Due: ${r.date}`, time: 'Today', read: false })
+      }
+    })
+  })
+  // Won deals
+  rawDeals.filter(d => d.stage === 'Won').slice(0, 1).forEach(d => {
+    notes.push({ id: id++, icon: '✅', text: `Deal won: ${d.name}`, sub: `${(d.value/1000).toFixed(0)}K CFA`, time: '1d ago', read: true })
+  })
+  return notes.slice(0, 8)
+}
+
+const notifications = buildNotifications()
 
 export default function TopBar({ title, actions }: TopBarProps) {
   const { lang, setLang } = useLang()

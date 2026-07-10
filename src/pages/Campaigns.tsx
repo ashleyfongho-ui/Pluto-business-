@@ -14,6 +14,7 @@ export default function Campaigns() {
   const { t } = useLang()
   const [showImport, setShowImport] = useState(false)
   const [showNew, setShowNew] = useState(false)
+  const [activeTab, setActiveTab] = useState<'campaigns' | 'commslog' | 'templates'>('campaigns')
   const [newStep, setNewStep] = useState<1|2|3>(1)
   const [newCampaign, setNewCampaign] = useState({
     name: '',
@@ -29,56 +30,147 @@ export default function Campaigns() {
     <>
       <TopBar title={t('campaigns')} />
       <main className="p-6 space-y-6">
-        {/* Campaigns list */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">All Campaigns</h2>
-            <div className="flex gap-2">
-              <button onClick={() => setShowImport(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-pluto-200 text-pluto-600 rounded-lg text-sm font-medium hover:bg-pluto-50 transition-colors">
-                <Upload size={13} />{t('import list')}
+        {/* Main tabs */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            {([['campaigns','Campaigns'],['commslog','Comms Log'],['templates','Templates']] as const).map(([key,label]) => (
+              <button key={key} onClick={() => setActiveTab(key)}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === key ? 'bg-white shadow text-pluto-700' : 'text-gray-500 hover:text-gray-700'}`}>
+                {label}
               </button>
-              <button onClick={() => setShowNew(true)} className="px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">+ New Campaign</button>
-            </div>
-          </div>
-          <table className="w-full text-sm">
-            <thead><tr className="bg-gray-50 border-b border-gray-100">
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Campaign</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Type</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Sent</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Opened</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Clicks</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Date</th>
-            </tr></thead>
-            <tbody>{campaigns.map(c => (
-              <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{c.name}</td>
-                <td className="px-4 py-3 text-gray-500">{c.type}</td>
-                <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[c.status]}`}>{c.status}</span></td>
-                <td className="px-4 py-3 text-gray-500">{c.sent}</td>
-                <td className="px-4 py-3 text-gray-500">{c.opened || '—'}</td>
-                <td className="px-4 py-3 text-gray-500">{c.clicks || '—'}</td>
-                <td className="px-4 py-3 text-gray-400 text-xs">{c.date}</td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-
-        {/* Templates */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="font-semibold text-gray-900 mb-4">{t('templates')}</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {campaignTemplates.map(tp => (
-              <div key={tp.id} className="p-4 rounded-lg border border-pluto-100 bg-pluto-50 hover:border-pluto-300 transition-colors cursor-pointer">
-                <p className="font-medium text-pluto-800 text-sm mb-1">{tp.name}</p>
-                <p className="text-xs text-pluto-600 mb-2">{tp.subject}</p>
-                <p className="text-xs text-gray-400 truncate">{tp.preview}</p>
-                <button className="mt-3 text-xs text-pluto-700 font-medium hover:underline">Use template →</button>
-              </div>
             ))}
           </div>
+          <div className="flex gap-2">
+            <button onClick={() => setShowImport(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-pluto-200 text-pluto-600 rounded-lg text-sm font-medium hover:bg-pluto-50 transition-colors">
+              <Upload size={13} />{t('import list')}
+            </button>
+            <button onClick={() => setShowNew(true)} className="px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">+ New Campaign</button>
+          </div>
         </div>
+
+        {/* Campaigns tab */}
+        {activeTab === 'campaigns' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead><tr className="bg-gray-50 border-b border-gray-100">
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Campaign</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Type</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Sent</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Opened</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Clicks</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Date</th>
+              </tr></thead>
+              <tbody>{campaigns.map(c => (
+                <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer">
+                  <td className="px-4 py-3 font-medium text-gray-900">{c.name}</td>
+                  <td className="px-4 py-3 text-gray-500">{c.type}</td>
+                  <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[c.status]}`}>{c.status}</span></td>
+                  <td className="px-4 py-3 text-gray-500">{c.sent}</td>
+                  <td className="px-4 py-3 text-gray-500">{c.opened || '—'}</td>
+                  <td className="px-4 py-3 text-gray-500">{c.clicks || '—'}</td>
+                  <td className="px-4 py-3 text-gray-400 text-xs">{c.date}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Comms Log tab */}
+        {activeTab === 'commslog' && (
+          <div className="space-y-4">
+            <div className="flex gap-3 flex-wrap">
+              <select className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                <option>All organisations</option>
+                {organisations.map(o => <option key={o.id}>{o.name}</option>)}
+              </select>
+              <select className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                <option>All contacts</option>
+                {contacts.map(c => <option key={c.id}>{c.name}</option>)}
+              </select>
+              <select className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                <option>All channels</option>
+                <option>WhatsApp</option>
+                <option>Email</option>
+                <option>SMS</option>
+              </select>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Contact / Org</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Campaign</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Channel</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Sent</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500">Product</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { contact: 'Jean-Pierre Kamga', org: 'Pharma Plus', campaign: 'Q3 Pharmacy Outreach', channel: 'Email', sent: '2026-07-01 09:12', status: 'Opened', product: 'Paracetamol 500mg' },
+                    { contact: 'Marie Ngo', org: 'Biyem Clinic', campaign: 'Q3 Pharmacy Outreach', channel: 'Email', sent: '2026-07-01 09:12', status: 'Clicked', product: 'Paracetamol 500mg' },
+                    { contact: 'Paul Mbarga', org: 'Moda Distribution', campaign: 'Q3 Pharmacy Outreach', channel: 'Email', sent: '2026-07-01 09:12', status: 'Sent', product: null },
+                    { contact: 'Cécile Kamga', org: 'Kamga & Sons', campaign: 'Ramadan Promotion', channel: 'WhatsApp', sent: '2026-06-01 08:00', status: 'Opened', product: 'Vitamin C 1000mg' },
+                    { contact: 'Henri Fouda', org: 'Étoile Clinic', campaign: 'Ramadan Promotion', channel: 'WhatsApp', sent: '2026-06-01 08:00', status: 'Sent', product: null },
+                  ].map((row, i) => (
+                    <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{row.contact}</p>
+                        <p className="text-xs text-gray-400">{row.org}</p>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700 text-sm">{row.campaign}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          row.channel === 'WhatsApp' ? 'bg-green-100 text-green-700' :
+                          row.channel === 'Email' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                        }`}>{row.channel}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{row.sent}</td>
+                      <td className="px-4 py-3">
+                        <span className={`flex items-center gap-1 text-xs font-medium w-fit ${
+                          row.status === 'Clicked' ? 'text-pluto-600' :
+                          row.status === 'Opened' ? 'text-green-600' : 'text-gray-400'
+                        }`}>
+                          {row.status === 'Clicked' ? <CheckCircle size={11}/> :
+                           row.status === 'Opened' ? <Eye size={11}/> :
+                           <Clock size={11}/>}
+                          {row.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.product ? (
+                          <span className="flex items-center gap-1 text-xs text-pluto-600 bg-pluto-50 px-2 py-0.5 rounded w-fit">
+                            <Package size={9}/>{row.product}
+                          </span>
+                        ) : <span className="text-gray-300 text-xs">—</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Templates tab */}
+        {activeTab === 'templates' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <h2 className="font-semibold text-gray-900 mb-4">{t('templates')}</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {campaignTemplates.map(tp => (
+                <div key={tp.id} className="p-4 rounded-lg border border-pluto-100 bg-pluto-50 hover:border-pluto-300 transition-colors cursor-pointer">
+                  <p className="font-medium text-pluto-800 text-sm mb-1">{tp.name}</p>
+                  <p className="text-xs text-pluto-600 mb-2">{tp.subject}</p>
+                  <p className="text-xs text-gray-400 truncate">{tp.preview}</p>
+                  <button className="mt-3 text-xs text-pluto-700 font-medium hover:underline">Use template →</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* New Campaign Modal */}

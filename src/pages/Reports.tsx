@@ -101,7 +101,7 @@ export default function Reports() {
     color: '#7c3aed',
   }))
   const pendingLeave = leaveRequests.filter(l => l.status === 'Pending').length
-  const totalSalary = staff.reduce((s, m) => s + (m as unknown as { salary?: number }).salary || 0, 0)
+  const totalSalary = staff.reduce((s, m) => s + ((m as unknown as { salary?: number }).salary ?? 0), 0)
 
   // ─── Pipeline calcs ────────────────────────────────────────────────────────
   const pipelineValue = deals.filter(d => !['Won', 'Lost'].includes(d.stage)).reduce((s, d) => s + d.value, 0)

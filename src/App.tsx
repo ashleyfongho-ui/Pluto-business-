@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import KeyboardShortcutsModal from './components/KeyboardShortcuts'
+import { PermissionsProvider } from './context/PermissionsContext'
+import PlutoAdmin from './pages/PlutoAdmin'
 import { LanguageProvider } from './context/LanguageContext'
 import { AppProvider } from './context/AppContext'
 import Layout from './components/Layout'
@@ -43,6 +45,7 @@ export default function App() {
   return (
     <LanguageProvider>
       <AppProvider>
+      <PermissionsProvider>
       <BrowserRouter>
       <ShortcutsWrapper>
         <Routes>
@@ -65,10 +68,12 @@ export default function App() {
             <Route path="/chat" element={<Chat />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/accounting" element={<Accounting />} />
+            <Route path="/pluto-admin" element={<PlutoAdmin />} />
           </Route>
         </Routes>
       </ShortcutsWrapper>
       </BrowserRouter>
+      </PermissionsProvider>
       </AppProvider>
     </LanguageProvider>
   )

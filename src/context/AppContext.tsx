@@ -102,7 +102,7 @@ export type Invoice = {
 }
 
 // ─── Business Type ──────────────────────────────────────────────────────────
-export type BusinessType = 'pharma' | 'produce' | 'retail' | 'services' | 'manufacturing'
+export type BusinessType = 'pharma' | 'produce' | 'retail' | 'services' | 'manufacturing' | 'travel' | 'construction' | 'waste'
 
 export const businessTypeConfig: Record<BusinessType, {
   label: string
@@ -152,6 +152,27 @@ export const businessTypeConfig: Record<BusinessType, {
     unitLabel: 'units', unitOptions: ['kg', 'tonnes', 'm²', 'rolls', 'litres', 'units'],
     hasExpiry: false, hasVariants: false, hasWaste: true, hasWeight: true,
     showLogistics: true, stockLabel: 'Materials', itemLabel: 'Material',
+  },
+  travel: {
+    label: 'Travel & Tourism', emoji: '✈️',
+    description: 'Flights, accommodation, bookings, excursions, insurance',
+    unitLabel: 'bookings', unitOptions: ['bookings', 'seats', 'nights', 'packages'],
+    hasExpiry: false, hasVariants: true, hasWaste: false, hasWeight: false,
+    showLogistics: false, stockLabel: 'Services', itemLabel: 'Service',
+  },
+  construction: {
+    label: 'Engineering / Construction', emoji: '🏗️',
+    description: 'Project-based — materials, labour, permits, milestones',
+    unitLabel: 'units', unitOptions: ['m²', 'tonnes', 'bags', 'litres', 'units', 'hours'],
+    hasExpiry: false, hasVariants: false, hasWaste: true, hasWeight: true,
+    showLogistics: true, stockLabel: 'Materials', itemLabel: 'Material',
+  },
+  waste: {
+    label: 'Waste Management', emoji: '♻️',
+    description: 'Waste collection, classification, disposal, recycling',
+    unitLabel: 'tonnes', unitOptions: ['tonnes', 'kg', 'litres', 'm³', 'loads'],
+    hasExpiry: false, hasVariants: true, hasWaste: false, hasWeight: true,
+    showLogistics: true, stockLabel: 'Waste', itemLabel: 'Waste Type',
   },
 }
 

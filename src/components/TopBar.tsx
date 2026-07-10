@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Bell, Plus, Search, Building2, User, GitBranch, X, ChevronRight, Globe } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useLang, languageOptions } from '../context/LanguageContext'
+import { usePermissions, allUsers, roleConfig } from '../context/PermissionsContext'
 import { useApp } from '../context/AppContext'
 import NewOrganisationModal from './NewOrganisationModal'
 import NewContactModal from './NewContactModal'
@@ -58,8 +59,11 @@ const notifications = buildNotifications()
 
 export default function TopBar({ title, actions }: TopBarProps) {
   const { lang, setLang } = useLang()
+  const { currentUser, setCurrentUser } = usePermissions()
   const [showLangMenu, setShowLangMenu] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
   const currentLang = languageOptions.find(o => o.code === lang)
   const { organisations, contacts, deals } = useApp()
   const navigate = useNavigate()
@@ -105,6 +109,7 @@ export default function TopBar({ title, actions }: TopBarProps) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifs(false)
       if (newMenuRef.current && !newMenuRef.current.contains(e.target as Node)) setShowNewMenu(false)
       if (langRef.current && !langRef.current.contains(e.target as Node)) setShowLangMenu(false)
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setShowUserMenu(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -171,6 +176,36 @@ export default function TopBar({ title, actions }: TopBarProps) {
         {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
           {actions}
+
+          {/* User switcher (dev/demo) */}
+          <div ref={userMenuRef} className="relative">
+            <button onClick={() => setShowUserMenu(s => !s)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-xs font-medium text-gray-600">
+              <div className="w-5 h-5 rounded-full bg-pluto-100 text-pluto-700 flex items-center justify-center text-xs font-bold">{currentUser.avatar.slice(0,2)}</div>
+              <span className="hidden sm:inline">{currentUser.name.split(' ')[0]}</span>
+            </button>
+            {showUserMenu && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+                <div className="px-3 py-2 border-b border-gray-50">
+                  <p className="text-xs text-gray-400 font-medium">Switch User (Demo)</p>
+                </div>
+                {allUsers.map(u => (
+                  <button key={u.id}
+                    onClick={() => { setCurrentUser(u); setShowUserMenu(false) }}
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-50 text-left border-b border-gray-50 last:border-0 ${
+                      currentUser.id === u.id ? 'bg-pluto-50' : ''
+                    }`}>
+                    <div className="w-6 h-6 rounded-full bg-pluto-100 text-pluto-700 flex items-center justify-center text-xs font-bold">{u.avatar.slice(0,2)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-900 truncate">{u.name}</p>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${roleConfig[u.role].color}`}>{roleConfig[u.role].label}</span>
+                    </div>
+                    {currentUser.id === u.id && <div className="w-1.5 h-1.5 rounded-full bg-pluto-600" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Language selector */}
           <div ref={langRef} className="relative">

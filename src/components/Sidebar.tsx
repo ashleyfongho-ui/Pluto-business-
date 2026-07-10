@@ -1,9 +1,10 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, Users, GitBranch, FileText,
-  Package, Truck, Megaphone, BarChart3, UserCheck, MessageSquare, Settings, Landmark
+  Package, Truck, Megaphone, BarChart3, UserCheck, MessageSquare, Settings, Landmark, Zap
 } from 'lucide-react'
 import { useLang } from '../context/LanguageContext'
+import { usePermissions } from '../context/PermissionsContext'
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, key: 'dashboard', exact: true },
@@ -22,6 +23,7 @@ const navItems = [
 
 export default function Sidebar() {
   const { t } = useLang()
+  const { isPlutoStaff } = usePermissions()
 
   return (
     <aside className="fixed top-0 left-0 h-full w-56 bg-pluto-900 flex flex-col z-30">
@@ -56,6 +58,16 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Pluto Admin link — Pluto staff only */}
+      {isPlutoStaff && (
+        <div className="px-2 pb-2">
+          <Link to="/pluto-admin"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors border border-red-900/30">
+            <Zap size={13} /> Pluto Admin
+          </Link>
+        </div>
+      )}
 
       {/* User footer */}
       <div className="px-4 py-3 border-t border-pluto-700">

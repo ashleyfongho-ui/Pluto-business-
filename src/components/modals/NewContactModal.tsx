@@ -37,6 +37,8 @@ export default function NewContactModal({ onClose }: Props) {
       ownedBy: 'u1',
       notes: '',
       conversations: [],
+      whatsapp: form.whatsapp || '',
+      tags: [],
     }
     addContact(contact)
     setSaving(false)

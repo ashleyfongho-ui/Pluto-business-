@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import KeyboardShortcutsModal from './components/KeyboardShortcuts'
 import { LanguageProvider } from './context/LanguageContext'
 import { AppProvider } from './context/AppContext'
 import Layout from './components/Layout'
@@ -21,11 +23,28 @@ import Chat from './pages/Chat'
 import Settings from './pages/Settings'
 import Accounting from './pages/Accounting'
 
+function ShortcutsWrapper({ children }: { children: React.ReactNode }) {
+  const [showShortcuts, setShowShortcuts] = useState(false)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (['INPUT','TEXTAREA','SELECT'].includes((e.target as HTMLElement)?.tagName)) return
+      if (e.key === '?') setShowShortcuts(s => !s)
+      if (e.key === 'Escape') setShowShortcuts(false)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+  return (
+    <>{children}{showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}</>
+  )
+}
+
 export default function App() {
   return (
     <LanguageProvider>
       <AppProvider>
       <BrowserRouter>
+      <ShortcutsWrapper>
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
@@ -48,6 +67,7 @@ export default function App() {
             <Route path="/accounting" element={<Accounting />} />
           </Route>
         </Routes>
+      </ShortcutsWrapper>
       </BrowserRouter>
       </AppProvider>
     </LanguageProvider>

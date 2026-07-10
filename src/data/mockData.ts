@@ -49,7 +49,7 @@ export const organisations = [
     parentOrgId: null,
     notes: 'Key pharmacy chain in Bastos. Director goes on holiday in August. Prefers WhatsApp communication. Decision maker is Jean-Pierre.',
     invoiceDetails: { vatNumber: 'M026312875', bankName: 'Afriland First Bank', accountNumber: '08005-00042-12345678901-27', swift: 'CCEICMCX' },
-    customFields: {},
+    customFields: {}, tags: ["VIP", "Pharmacy"],
   },
   {
     id: 2,
@@ -70,7 +70,7 @@ export const organisations = [
     parentOrgId: null,
     notes: 'Small private clinic. CEO Marie prefers formal email correspondence. Potential for monthly supply contract.',
     invoiceDetails: { vatNumber: 'M087654321', bankName: 'SCB Cameroun', accountNumber: '08001-00078-98765432109-14', swift: 'SCBLCMCX' },
-    customFields: {},
+    customFields: {}, tags: ["Healthcare"],
   },
   {
     id: 3,
@@ -91,7 +91,7 @@ export const organisations = [
     parentOrgId: null,
     notes: 'Large distribution network. Connected to Moda Holding. Founder deceased 2022 — son Moda now in charge but less focused on medical side. Good window of opportunity.',
     invoiceDetails: { vatNumber: 'M011223344', bankName: 'UBC Cameroun', accountNumber: '08003-00091-55667788990-42', swift: 'UBCACMCX' },
-    customFields: {},
+    customFields: {}, tags: ["Distributor", "High Value"],
   },
   {
     id: 4,
@@ -112,7 +112,7 @@ export const organisations = [
     parentOrgId: null,
     notes: 'Smaller clinic. CFO Henri is the gatekeeper — always go through him first.',
     invoiceDetails: { vatNumber: 'M099887766', bankName: 'BICEC', accountNumber: '08007-00034-44332211009-19', swift: 'BICOCMCX' },
-    customFields: {},
+    customFields: {}, tags: ["Healthcare"],
   },
   {
     id: 5,
@@ -133,7 +133,7 @@ export const organisations = [
     parentOrgId: null,
     notes: 'Family business. Cécile handles all procurement. Fast payer when COD agreed upfront.',
     invoiceDetails: { vatNumber: 'M055443322', bankName: 'Ecobank Cameroun', accountNumber: '08009-00056-11223344556-33', swift: 'ECOCCMCX' },
-    customFields: {},
+    customFields: {}, tags: ["Distributor"],
   },
 ]
 
@@ -142,6 +142,7 @@ export const contacts = [
   {
     id: 1, orgId: 1, name: 'Jean-Pierre Kamga', role: 'Director',
     phone: '+237 677 123 456', email: 'jp.kamga@pharmaplus.cm',
+    whatsapp: '+237677123456', tags: ['VIP', 'Decision Maker'],
     country: 'CM', city: 'Yaoundé', address: '14 Avenue Kennedy, Bastos',
     lastContact: '1h ago', ownedBy: 'u1',
     notes: 'Prefers WhatsApp. Best time to call: mornings. Wife is Sylvie. Has a dog named Rex.',
@@ -154,6 +155,7 @@ export const contacts = [
   {
     id: 2, orgId: 2, name: 'Marie Essomba', role: 'CEO',
     phone: '+237 699 234 567', email: 'm.essomba@biyem.cm',
+    whatsapp: '+237699234567', tags: ['Decision Maker'],
     country: 'CM', city: 'Douala', address: '7 Rue des Cliniques, Akwa',
     lastContact: '3h ago', ownedBy: 'u1',
     notes: 'Very formal. Always email first. Birthday in March. Clinic expands in 2027.',
@@ -165,6 +167,7 @@ export const contacts = [
   {
     id: 3, orgId: 3, name: 'Paul Mbarga', role: 'Operations Manager',
     phone: '+237 655 345 678', email: 'p.mbarga@moda.cm',
+    whatsapp: '+237655345678', tags: ['Distributor'],
     country: 'CM', city: 'Yaoundé', address: '23 Boulevard de la Réunification',
     lastContact: 'Yesterday', ownedBy: 'u1',
     notes: 'Reports directly to Moda (son). Very operational, not strategic. Escalate anything contractual to Moda directly.',
@@ -175,6 +178,7 @@ export const contacts = [
   {
     id: 4, orgId: 5, name: 'Cécile Nkoulou', role: 'Procurement',
     phone: '+237 677 456 789', email: 'c.nkoulou@kamga.cm',
+    whatsapp: '+237677456789', tags: ['Buyer'],
     country: 'CM', city: 'Douala', address: '44 Rue de Bali, Bali',
     lastContact: '2 days ago', ownedBy: 'u3',
     notes: 'Decision maker for all purchasing. Very price-sensitive. Responds well to bulk discounts.',
@@ -185,6 +189,7 @@ export const contacts = [
   {
     id: 5, orgId: 4, name: 'Henri Atangana', role: 'CFO',
     phone: '+237 699 567 890', email: 'h.atangana@etoile.cm',
+    whatsapp: '+237699567890', tags: ['Finance', 'Gatekeeper'],
     country: 'CM', city: 'Yaoundé', address: '5 Rue de l\'Indépendance, Centre Ville',
     lastContact: '3 days ago', ownedBy: 'u2',
     notes: 'Gatekeeper at Étoile. Never goes to CEO without his approval first. Very detail-oriented on contracts.',
@@ -198,7 +203,7 @@ export const contacts = [
 export const deals = [
   {
     id: 1, name: 'Pharma Plus — Q3 Supply', orgId: 1, contactId: 1,
-    stage: 'Negotiation', value: 850000, age: 12, owner: 'u1',
+    stage: 'Negotiation', value: 850000, age: 12, owner: 'u1', probability: 65, tags: ['Q3', 'Medical'],
     lineItems: [
       { id: 'li1', type: 'product', description: 'Paracetamol 500mg', sku: 'SKU-001', qty: 500, unitPrice: 850, total: 425000 },
       { id: 'li2', type: 'product', description: 'Amoxicillin 250mg', sku: 'SKU-002', qty: 100, unitPrice: 1500, total: 150000 },
@@ -209,7 +214,7 @@ export const deals = [
   },
   {
     id: 2, name: 'Biyem Clinic Diagnostics', orgId: 2, contactId: 2,
-    stage: 'Proposal', value: 320000, age: 8, owner: 'u1',
+    stage: 'Proposal', value: 320000, age: 8, owner: 'u1', probability: 40, tags: ['Healthcare'],
     lineItems: [
       { id: 'li4', type: 'product', description: 'Check-up Kiosk Setup', sku: 'SKU-KIOSK', qty: 1, unitPrice: 220000, total: 220000 },
       { id: 'li5', type: 'service', description: 'Monthly maintenance', qty: 12, unitPrice: 8333, total: 100000 },
@@ -219,7 +224,7 @@ export const deals = [
   },
   {
     id: 3, name: 'Moda Annual Contract', orgId: 3, contactId: 3,
-    stage: 'Qualified', value: 1200000, age: 21, owner: 'u1',
+    stage: 'Qualified', value: 1200000, age: 21, owner: 'u1', probability: 20, tags: ['Distribution', 'High Value'],
     lineItems: [
       { id: 'li6', type: 'service', description: 'Annual distribution partnership', qty: 1, unitPrice: 1200000, total: 1200000 },
     ],
@@ -228,7 +233,7 @@ export const deals = [
   },
   {
     id: 4, name: 'Kamga Restocking', orgId: 5, contactId: 4,
-    stage: 'Won', value: 175000, age: 5, owner: 'u3',
+    stage: 'Won', value: 175000, age: 5, owner: 'u3', probability: 100, tags: ['COD'],
     lineItems: [
       { id: 'li7', type: 'product', description: 'Paracetamol 500mg', sku: 'SKU-001', qty: 200, unitPrice: 850, total: 170000 },
       { id: 'li8', type: 'product', description: 'Vitamin C 1000mg', sku: 'SKU-003', qty: 50, unitPrice: 100, total: 5000 },
@@ -238,7 +243,7 @@ export const deals = [
   },
   {
     id: 5, name: 'Étoile Equipment', orgId: 4, contactId: 5,
-    stage: 'Lost', value: 280000, age: 30, owner: 'u2',
+    stage: 'Lost', value: 280000, age: 30, owner: 'u2', probability: 0, tags: ['Healthcare'],
     lineItems: [
       { id: 'li9', type: 'product', description: 'Diagnostic Equipment Bundle', sku: 'SKU-DIAG', qty: 1, unitPrice: 280000, total: 280000 },
     ],

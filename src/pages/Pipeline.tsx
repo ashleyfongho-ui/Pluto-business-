@@ -4,8 +4,9 @@ import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
 import { useApp } from '../context/AppContext'
 import NewDealModal from '../components/NewDealModal'
-import { contracts, contractTemplates, contacts as allContacts } from '../data/mockData'
-import { FileText, TrendingUp, FileCheck, ChevronRight, LayoutGrid, List, GitBranch, User, Package } from 'lucide-react'
+import { contracts, contractTemplates, contacts as allContacts, systemUsers } from '../data/mockData'
+import { FileText, TrendingUp, FileCheck, ChevronRight, LayoutGrid, List, GitBranch, User, Package, Download } from 'lucide-react'
+import { downloadCSV } from '../utils/csvExport'
 
 const stages = ['Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']
 const stageColors: Record<string, string> = {
@@ -42,9 +43,34 @@ export default function Pipeline() {
   const target = 2000000
   const gap = target - wonValue
 
+  const [stageFilter, setStageFilter] = useState('')
+  const [ownerFilter, setOwnerFilter] = useState('')
+
   const getOrg = (orgId: number) => organisations.find(o => o.id === orgId)?.name || '—'
   const getContact = (contactId?: number) => contactId ? allContacts.find(c => c.id === contactId) : null
   const getPrimaryProduct = (deal: typeof deals[0]) => deal.lineItems?.[0]?.description || null
+
+  const filteredDeals = deals.filter(d => {
+    const matchStage = !stageFilter || d.stage === stageFilter
+    const matchOwner = !ownerFilter || d.owner === ownerFilter
+    return matchStage && matchOwner
+  })
+
+  const weightedValue = deals
+    .filter(d => !['Won','Lost'].includes(d.stage))
+    .reduce((s, d) => s + d.value * ((d as typeof d & {probability?:number}).probability ?? 50) / 100, 0)
+
+  const handleExport = () => {
+    downloadCSV('pipeline.csv', filteredDeals.map(d => ({
+      Name: d.name,
+      Organisation: getOrg(d.orgId),
+      Stage: d.stage,
+      Value: d.value,
+      Probability: (d as typeof d & {probability?:number}).probability ?? '',
+      Owner: systemUsers.find(u => u.id === d.owner)?.name ?? '',
+      Age: d.age,
+    })))
+  }
 
   return (
     <>
@@ -82,6 +108,30 @@ export default function Pipeline() {
 
         {tab === 'deals' && (
           <div className="space-y-4">
+            {/* Filters + weighted value */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                <option value="">All stages</option>
+                {stages.map(s => <option key={s}>{s}</option>)}
+              </select>
+              <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                <option value="">All owners</option>
+                {systemUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
+              <div className="ml-auto flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-xs text-gray-400">Weighted pipeline</p>
+                  <p className="text-sm font-bold text-pluto-700">{(weightedValue/1000).toFixed(0)}K CFA</p>
+                </div>
+                <button onClick={handleExport}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
+                  <Download size={13}/> CSV
+                </button>
+              </div>
+            </div>
+
             {/* Stage summary */}
             <div className="grid grid-cols-5 gap-3">
               {stages.map(s => {
@@ -107,12 +157,13 @@ export default function Pipeline() {
                       <th className="text-left px-4 py-3 font-medium text-gray-500">Organisation</th>
                       <th className="text-left px-4 py-3 font-medium text-gray-500">Stage</th>
                       <th className="text-left px-4 py-3 font-medium text-gray-500">Value</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-500">Probability</th>
                       <th className="text-left px-4 py-3 font-medium text-gray-500">Age</th>
                       <th className="px-4 py-3"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {deals.length === 0 ? (
+                    {filteredDeals.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-12 text-center">
                           <GitBranch size={32} className="text-gray-200 mx-auto mb-2" />
@@ -124,9 +175,10 @@ export default function Pipeline() {
                         </td>
                       </tr>
                     ) : (
-                      deals.map(d => {
+                      filteredDeals.map(d => {
                         const contact = getContact(d.contactId)
                         const product = getPrimaryProduct(d)
+                        const prob = (d as typeof d & {probability?:number}).probability
                         return (
                         <tr key={d.id} onClick={() => navigate(`/pipeline/${d.id}`)}
                           className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer group">
@@ -142,7 +194,18 @@ export default function Pipeline() {
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${stageColors[d.stage]}`}>{d.stage}</span>
                           </td>
                           <td className="px-4 py-3 font-semibold text-gray-900">{(d.value / 1000).toFixed(0)}K CFA</td>
-                          <td className="px-4 py-3 text-gray-400">{d.age}d</td>
+                          <td className="px-4 py-3">
+                            {prob !== undefined && (
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-12 bg-gray-100 rounded-full h-1.5">
+                                  <div className={`h-1.5 rounded-full ${prob >= 65 ? 'bg-green-500' : prob >= 30 ? 'bg-amber-400' : 'bg-gray-300'}`}
+                                    style={{width:`${prob}%`}}/>
+                                </div>
+                                <span className="text-xs text-gray-500">{prob}%</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-gray-400 text-xs">{d.age}d</td>
                           <td className="px-4 py-3">
                             <ChevronRight size={14} className="text-gray-300 group-hover:text-pluto-500" />
                           </td>

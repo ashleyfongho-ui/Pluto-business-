@@ -4,7 +4,10 @@ import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
 import { useApp } from '../context/AppContext'
 import NewOrganisationModal from '../components/NewOrganisationModal'
-import { ChevronRight, Building2, Search } from 'lucide-react'
+import TagPills from '../components/TagPills'
+import { ChevronRight, Building2, Search, Download } from 'lucide-react'
+import { systemUsers } from '../data/mockData'
+import { downloadCSV } from '../utils/csvExport'
 
 export default function Organisations() {
   const { t } = useLang()
@@ -13,13 +16,24 @@ export default function Organisations() {
   const [showNew, setShowNew] = useState(false)
   const [search, setSearch] = useState('')
   const [sectorFilter, setSectorFilter] = useState('')
+  const [ownerFilter, setOwnerFilter] = useState('')
+
+  const handleExport = () => {
+    downloadCSV('organisations.csv', filtered.map(o => ({
+      Name: o.name, Sector: o.sector, City: o.city, Country: o.country,
+      Phone: o.phone, Email: o.email, 'Payment Terms': o.paymentTerms,
+      Outstanding: o.outstanding, 'Last Activity': o.lastActivity,
+      Owner: systemUsers.find(u => u.id === o.ownedBy)?.name ?? '',
+    })))
+  }
 
   const sectors = [...new Set(organisations.map(o => o.sector))].sort()
   const filtered = organisations.filter(o => {
     const q = search.toLowerCase()
     const matchSearch = !search || o.name.toLowerCase().includes(q) || o.city.toLowerCase().includes(q) || o.sector.toLowerCase().includes(q)
     const matchSector = !sectorFilter || o.sector === sectorFilter
-    return matchSearch && matchSector
+    const matchOwner = !ownerFilter || o.ownedBy === ownerFilter || o.teamRelevance === ownerFilter
+    return matchSearch && matchSector && matchOwner
   })
 
   return (
@@ -54,22 +68,28 @@ export default function Organisations() {
                   className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300"
                 />
               </div>
-              <select
-                value={sectorFilter}
-                onChange={e => setSectorFilter(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-pluto-300"
-              >
+              <select value={sectorFilter} onChange={e => setSectorFilter(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-pluto-300">
                 <option value="">All sectors</option>
                 {sectors.map(s => <option key={s}>{s}</option>)}
               </select>
+              <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                <option value="">All staff</option>
+                {systemUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
               <span className="text-sm text-gray-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
             </div>
-            <button
-              onClick={() => setShowNew(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-semibold hover:bg-pluto-700 transition-colors whitespace-nowrap"
-            >
-              + New Organisation
-            </button>
+            <div className="flex gap-2">
+              <button onClick={handleExport}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
+                <Download size={13} /> CSV
+              </button>
+              <button onClick={() => setShowNew(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-semibold hover:bg-pluto-700 transition-colors whitespace-nowrap">
+                + New Organisation
+              </button>
+            </div>
           </div>
 
           <table className="w-full text-sm">
@@ -77,10 +97,11 @@ export default function Organisations() {
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Organisation</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Sector</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Tags</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">City</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Contacts</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Outstanding</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Payment Terms</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Owner</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Last Activity</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -112,12 +133,17 @@ export default function Organisations() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-500">{o.sector}</td>
+                    <td className="px-4 py-3">
+                      <TagPills tags={(o as typeof o & {tags?: string[]}).tags || []} size="xs" />
+                    </td>
                     <td className="px-4 py-3 text-gray-500">{o.city}</td>
                     <td className="px-4 py-3 text-gray-500">{contacts.filter(c => c.orgId === o.id).length}</td>
                     <td className="px-4 py-3 font-medium">
                       {o.outstanding ? <span className="text-red-500">{o.outstanding.toLocaleString()} CFA</span> : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">{o.paymentTerms}</td>
+                    <td className="px-4 py-3 text-xs text-gray-400">
+                      {systemUsers.find(u => u.id === o.ownedBy)?.name.split(' ')[0] || '—'}
+                    </td>
                     <td className="px-4 py-3 text-gray-400 text-xs">{o.lastActivity}</td>
                     <td className="px-4 py-3">
                       <ChevronRight size={14} className="text-gray-300 group-hover:text-pluto-500 transition-colors" />

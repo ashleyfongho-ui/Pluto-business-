@@ -14,7 +14,18 @@ export default function Campaigns() {
   const { t } = useLang()
   const [showImport, setShowImport] = useState(false)
   const [showNew, setShowNew] = useState(false)
-  const [activeTab, setActiveTab] = useState<'campaigns' | 'commslog' | 'templates'>('campaigns')
+  const [activeTab, setActiveTab] = useState<'campaigns' | 'commslog' | 'templates' | 'buildlist'>('campaigns')
+  const [listOwnerFilter, setListOwnerFilter] = useState('')
+  const [listSectorFilter, setListSectorFilter] = useState('')
+  const [listCityFilter, setListCityFilter] = useState('')
+
+  const buildListMatches = contacts.filter(c => {
+    const org = organisations.find(o => o.id === c.orgId)
+    const matchOwner = !listOwnerFilter || c.ownedBy === listOwnerFilter
+    const matchSector = !listSectorFilter || org?.sector === listSectorFilter
+    const matchCity = !listCityFilter || (c.city || org?.city || '').toLowerCase().includes(listCityFilter.toLowerCase())
+    return matchOwner && matchSector && matchCity
+  })
   const [newStep, setNewStep] = useState<1|2|3>(1)
   const [newCampaign, setNewCampaign] = useState({
     name: '',
@@ -33,7 +44,7 @@ export default function Campaigns() {
         {/* Main tabs */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-            {([['campaigns','Campaigns'],['commslog','Comms Log'],['templates','Templates']] as const).map(([key,label]) => (
+            {([['campaigns','Campaigns'],['commslog','Comms Log'],['buildlist','Build List'],['templates','Templates']] as const).map(([key,label]) => (
               <button key={key} onClick={() => setActiveTab(key)}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === key ? 'bg-white shadow text-pluto-700' : 'text-gray-500 hover:text-gray-700'}`}>
                 {label}
@@ -168,6 +179,86 @@ export default function Campaigns() {
                   <button className="mt-3 text-xs text-pluto-700 font-medium hover:underline">Use template →</button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Build List tab */}
+        {activeTab === 'buildlist' && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <h3 className="font-semibold text-gray-900 mb-4">Filter & Build Contact List</h3>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Staff Member (owner)</label>
+                  <select value={listOwnerFilter} onChange={e => setListOwnerFilter(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                    <option value="">All staff</option>
+                    {[...new Set(contacts.map(c => c.ownedBy))].map(uid => (
+                      <option key={uid} value={uid}>{uid === 'u1' ? 'Fabrice Mvondo' : uid === 'u2' ? 'Christelle Abena' : uid === 'u3' ? 'Bruno Manga' : uid}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Sector</label>
+                  <select value={listSectorFilter} onChange={e => setListSectorFilter(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300">
+                    <option value="">All sectors</option>
+                    {[...new Set(organisations.map(o => o.sector))].sort().map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">City</label>
+                  <input value={listCityFilter} onChange={e => setListCityFilter(e.target.value)}
+                    placeholder="e.g. Yaoundé, Douala…"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-semibold text-gray-900">{buildListMatches.length} contact{buildListMatches.length !== 1 ? 's' : ''} match</p>
+                <div className="flex gap-2">
+                  <button className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50">
+                    Export CSV
+                  </button>
+                  <button onClick={() => setShowNew(true)}
+                    className="px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700">
+                    Use as Campaign Audience
+                  </button>
+                </div>
+              </div>
+              <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="text-left px-4 py-2 font-medium text-gray-500">Name</th>
+                      <th className="text-left px-4 py-2 font-medium text-gray-500">Role</th>
+                      <th className="text-left px-4 py-2 font-medium text-gray-500">Organisation</th>
+                      <th className="text-left px-4 py-2 font-medium text-gray-500">Phone</th>
+                      <th className="text-left px-4 py-2 font-medium text-gray-500">Owner</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {buildListMatches.length === 0 ? (
+                      <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-sm">No contacts match your filters</td></tr>
+                    ) : (
+                      buildListMatches.map(c => {
+                        const org = organisations.find(o => o.id === c.orgId)
+                        return (
+                          <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50">
+                            <td className="px-4 py-2 font-medium text-gray-900">{c.name}</td>
+                            <td className="px-4 py-2 text-gray-500">{c.role}</td>
+                            <td className="px-4 py-2 text-gray-500">{org?.name || '—'}</td>
+                            <td className="px-4 py-2 text-gray-400 text-xs">{c.phone}</td>
+                            <td className="px-4 py-2 text-xs text-gray-400">
+                              {c.ownedBy === 'u1' ? 'Fabrice' : c.ownedBy === 'u2' ? 'Christelle' : c.ownedBy === 'u3' ? 'Bruno' : c.ownedBy}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

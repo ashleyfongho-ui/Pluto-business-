@@ -40,6 +40,7 @@ export default function NewOrgModal({ onClose }: Props) {
       notes: '',
       invoiceDetails: { vatNumber: '', bankName: '', accountNumber: '', swift: '' },
       customFields: {},
+      tags: [],
     }
     addOrg(org)
     setSaving(false)

@@ -31,6 +31,8 @@ export default function NewDealModal({ onClose }: Props) {
       owner: form.owner,
       lineItems: [],
       notes: form.notes,
+      probability: form.stage === 'Won' ? 100 : form.stage === 'Lost' ? 0 : form.stage === 'Negotiation' ? 65 : form.stage === 'Proposal' ? 40 : 20,
+      tags: [],
       reminders: form.dueDate
         ? [{ id: `r-${newId}`, date: form.dueDate, assignedTo: form.owner, note: 'Follow up on deal' }]
         : [],

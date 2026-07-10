@@ -10,7 +10,7 @@ import {
   Upload, Scan, X, Check, Shield, FileText, DollarSign, Leaf,
   Clock, Layers, Wrench, Info, Barcode, Printer
 } from 'lucide-react'
-import { PrintLabelModal, BarcodeScannerModal } from '../components/BarcodeDisplay'
+import BarcodeModal from '../components/BarcodeModal'
 
 function daysToExpiry(dateStr: string) {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -40,9 +40,7 @@ export default function Inventory() {
   const [filter, setFilter] = useState<'all' | 'expiring' | 'low' | 'transit' | 'waste'>('all')
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [showAddStock, setShowAddStock] = useState(false)
-  const [showScanner, setShowScanner] = useState(false)
-  const [showPrintAll, setShowPrintAll] = useState(false)
-  const [scanResult, setScanResult] = useState<string | null>(null)
+  const [barcodeItem, setBarcodeItem] = useState<{sku: string; name: string} | null>(null)
   const [addTab, setAddTab] = useState<'manual' | 'receipt' | 'insurance' | 'dailyrec'>('manual')
   const [ocrState, setOcrState] = useState<'idle' | 'scanning' | 'done'>('idle')
   const [receiptFile, setReceiptFile] = useState<string | null>(null)
@@ -76,20 +74,6 @@ export default function Inventory() {
     { description: 'Paracetamol 500mg (x500)', qty: 500, unitCost: 450, total: 225000 },
     { description: 'Amoxicillin 250mg (x100)', qty: 100, unitCost: 1200, total: 120000 },
   ]
-
-  const handleScan = (value: string) => {
-    setShowScanner(false)
-    setScanResult(value)
-    // Find matching item
-    const match = inventory.find(i =>
-      i.sku === value ||
-      i.batches.some(b => b.batchId === value) ||
-      i.name.toLowerCase().includes(value.toLowerCase())
-    )
-    if (match) {
-      navigate(`/inventory/${match.id}`)
-    }
-  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -150,18 +134,7 @@ export default function Inventory() {
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <p className="text-sm text-gray-500">{filtered.length} {cfg.itemLabel.toLowerCase()}{filtered.length !== 1 ? 's' : ''}</p>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowScanner(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-pluto-200 text-pluto-600 rounded-lg text-sm font-medium hover:bg-pluto-50 transition-colors"
-              >
-                <Scan size={13} /> Scan
-              </button>
-              <button
-                onClick={() => setShowPrintAll(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
-                <Printer size={13} /> Print Labels
-              </button>
+
               <button onClick={() => { setShowAddStock(true); setOcrState('idle'); setReceiptFile(null) }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">
                 <Plus size={13} /> {businessType === 'services' ? 'Add Service' : businessType === 'produce' ? 'Add Produce' : `Add ${cfg.itemLabel}`}
@@ -274,10 +247,15 @@ export default function Inventory() {
                           </td>
                         )}
                         <td className="px-4 py-3">
-                          <div className="flex gap-1 flex-wrap">
+                          <div className="flex gap-1 flex-wrap items-center">
                             {isLow && <span className="px-1.5 py-0.5 bg-red-100 text-red-600 text-xs rounded font-medium">Low</span>}
                             {isExpiring && <span className="px-1.5 py-0.5 bg-amber-100 text-amber-600 text-xs rounded font-medium">Exp</span>}
                             {hasTransit && <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 text-xs rounded font-medium">Transit</span>}
+                            <button
+                              onClick={e => { e.stopPropagation(); setBarcodeItem({ sku: item.sku, name: item.name }) }}
+                              className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded hover:bg-gray-200 flex items-center gap-0.5">
+                              <Barcode size={10} /> Barcode
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -626,25 +604,9 @@ export default function Inventory() {
         </div>
       )}
 
-      {/* Barcode Scanner */}
-      {showScanner && (
-        <BarcodeScannerModal
-          title="Scan to Find Item"
-          onScan={handleScan}
-          onClose={() => setShowScanner(false)}
-        />
-      )}
-
-      {/* Print All Labels */}
-      {showPrintAll && (
-        <PrintLabelModal
-          items={filtered.map(item => ({
-            sku: item.sku,
-            name: item.name,
-            price: item.batches[0]?.sellPerUnit,
-          }))}
-          onClose={() => setShowPrintAll(false)}
-        />
+      {/* Barcode Modal */}
+      {barcodeItem && (
+        <BarcodeModal sku={barcodeItem.sku} name={barcodeItem.name} onClose={() => setBarcodeItem(null)} />
       )}
 
       {/* Daily Rec modal shortcut (from filter strip) */}

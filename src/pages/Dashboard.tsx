@@ -208,15 +208,30 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Recent activity */}
+            {/* Recent activity — derived from live data */}
             <div className="mt-4 pt-4 border-t border-gray-100">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Activity</p>
               <div className="space-y-2">
                 {[
-                  { icon: '💬', text: 'WhatsApp from Paul Mbarga', sub: 'Moda Distribution', time: '2h ago' },
-                  { icon: '✅', text: 'INV-003 marked paid', sub: 'Kamga & Sons', time: '1d ago' },
-                  { icon: '📋', text: 'Q3 proposal sent', sub: 'Pharma Plus', time: '2d ago' },
-                ].map((a, i) => (
+                  ...invoices.filter(i => i.status === 'paid').map(i => ({
+                    icon: '✅',
+                    text: `${i.id} marked paid`,
+                    sub: organisations.find(o => o.id === i.orgId)?.name || '—',
+                    time: i.paidAt ? new Date(i.paidAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'recently',
+                  })),
+                  ...deals.filter(d => d.stage === 'Proposal').map(d => ({
+                    icon: '📋',
+                    text: `Proposal: ${d.name}`,
+                    sub: organisations.find(o => o.id === d.orgId)?.name || '—',
+                    time: `${d.age}d ago`,
+                  })),
+                  ...contacts.slice(0, 2).map(c => ({
+                    icon: '💬',
+                    text: `Last contact: ${c.name}`,
+                    sub: organisations.find(o => o.id === c.orgId)?.name || '—',
+                    time: c.lastContact,
+                  })),
+                ].slice(0, 4).map((a, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <span className="text-sm">{a.icon}</span>
                     <div className="flex-1 min-w-0">

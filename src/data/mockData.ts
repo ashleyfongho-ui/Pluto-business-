@@ -210,7 +210,7 @@ export const deals = [
       { id: 'li3', type: 'service', description: 'Quarterly delivery service', qty: 3, unitPrice: 91667, total: 275000 },
     ],
     notes: 'Client wants revised pricing by Friday. Key leverage: they need August supply confirmed.',
-    reminders: [{ id: 'r1', date: '2026-07-11', assignedTo: 'u1', note: 'Send revised Q3 pricing to Jean-Pierre' }],
+    reminders: [{ id: 'r1', date: '2026-07-25', assignedTo: 'u1', note: 'Send revised Q3 pricing to Jean-Pierre' }],
   },
   {
     id: 2, name: 'Biyem Clinic Diagnostics', orgId: 2, contactId: 2,
@@ -229,7 +229,7 @@ export const deals = [
       { id: 'li6', type: 'service', description: 'Annual distribution partnership', qty: 1, unitPrice: 1200000, total: 1200000 },
     ],
     notes: 'Needs contract sign-off from Moda (son). Paul is just the ops contact.',
-    reminders: [{ id: 'r2', date: '2026-07-12', assignedTo: 'u1', note: 'Escalate to Moda directly — Paul not empowered to sign' }],
+    reminders: [{ id: 'r2', date: '2026-07-28', assignedTo: 'u1', note: 'Escalate to Moda directly — Paul not empowered to sign' }],
   },
   {
     id: 4, name: 'Kamga Restocking', orgId: 5, contactId: 4,

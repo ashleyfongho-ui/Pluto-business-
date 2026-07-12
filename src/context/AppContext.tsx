@@ -202,7 +202,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [deals, setDeals] = useState<Deal[]>(initDeals as unknown as Deal[])
   const [invoices, setInvoices] = useState<Invoice[]>(initInvoices as unknown as Invoice[])
   const [businessType, setBusinessTypeState] = useState<BusinessType>(
-    () => (localStorage.getItem('pluto_business_type') as BusinessType) || 'pharma'
+    () => {
+      const stored = localStorage.getItem('pluto_business_type') as BusinessType | null
+      const validTypes: BusinessType[] = ['pharma', 'produce', 'retail', 'services', 'manufacturing', 'travel', 'construction', 'waste']
+      return (stored && validTypes.includes(stored)) ? stored : 'pharma'
+    }
   )
   const setBusinessType = (t: BusinessType) => {
     setBusinessTypeState(t)

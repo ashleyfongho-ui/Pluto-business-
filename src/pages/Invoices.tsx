@@ -35,6 +35,7 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState(initialInvoices)
   const [txns, setTxns] = useState(initialTxns)
   const [tab, setTab] = useState<'invoices' | 'reconciliation'>('invoices')
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all')
   const [reminderModal, setReminderModal] = useState<Invoice | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -78,6 +79,38 @@ export default function Invoices() {
 
         {tab === 'invoices' && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Status filter bar */}
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+              {(['all', 'sent', 'overdue', 'paid', 'draft'] as const).map(s => {
+                const count = s === 'all' ? invoices.length : invoices.filter(i => i.status === s).length
+                const activeClasses = s === 'all'
+                  ? 'bg-pluto-600 text-white'
+                  : s === 'overdue' ? 'bg-red-500 text-white'
+                  : s === 'paid' ? 'bg-green-500 text-white'
+                  : s === 'sent' ? 'bg-blue-500 text-white'
+                  : 'bg-gray-600 text-white'
+                const inactiveClasses = s === 'all'
+                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : s === 'overdue' ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                  : s === 'paid' ? 'bg-green-50 text-green-600 hover:bg-green-100'
+                  : s === 'sent' ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                  : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                return (
+                  <button key={s} onClick={() => setStatusFilter(s)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all flex items-center gap-1.5 ${
+                      statusFilter === s ? activeClasses : inactiveClasses
+                    }`}>
+                    {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+                    <span className={`text-xs font-bold ${
+                      statusFilter === s ? 'opacity-80' : 'opacity-60'
+                    }`}>{count}</span>
+                  </button>
+                )
+              })}
+              <div className="ml-auto text-xs text-gray-400">
+                {statusFilter === 'all' ? invoices.length : invoices.filter(i => i.status === statusFilter).length} invoice{(statusFilter === 'all' ? invoices.length : invoices.filter(i => i.status === statusFilter).length) !== 1 ? 's' : ''}
+              </div>
+            </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
@@ -92,7 +125,7 @@ export default function Invoices() {
                 </tr>
               </thead>
               <tbody>
-                {invoices.map(inv => (
+                {(statusFilter === 'all' ? invoices : invoices.filter(i => i.status === statusFilter)).map(inv => (
                   <tr key={inv.id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="px-4 py-3 font-mono font-medium text-pluto-700">{inv.id}</td>
                     <td className="px-4 py-3 text-gray-900">{organisations.find(o => o.id === inv.orgId)?.name || '—'}</td>

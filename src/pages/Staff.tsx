@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import TopBar from '../components/TopBar'
 import { useLang } from '../context/LanguageContext'
 import { staff, leaveRequests, disciplinaryLog, payrollRuns } from '../data/mockData'
-import { ChevronRight, DollarSign, CheckCircle, Clock, Download, Play, X, FileText } from 'lucide-react'
+import { ChevronRight, DollarSign, CheckCircle, Clock, Download, Play, X, FileText, Search } from 'lucide-react'
 
 const statusColors: Record<string, string> = {
   Active: 'bg-green-100 text-green-700',
@@ -49,6 +49,12 @@ export default function Staff() {
   const [tab, setTab] = useState<'overview' | 'schedule' | 'leave' | 'disciplinary' | 'payroll'>('overview')
   const [payslipModal, setPayslipModal] = useState<typeof staff[0] | null>(null)
   const [runPayrollModal, setRunPayrollModal] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filteredStaff = staff.filter(s => {
+    const q = search.toLowerCase()
+    return !search || s.name.toLowerCase().includes(q) || s.role.toLowerCase().includes(q) || s.department.toLowerCase().includes(q)
+  })
 
   const totalMonthlyGross = staff.reduce((s, m) => {
     const ps = calcPayslip(m)
@@ -79,9 +85,15 @@ export default function Staff() {
         {/* OVERVIEW */}
         {tab === 'overview' && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <p className="text-sm text-gray-500">{staff.length} staff members</p>
-              <button className="px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">+ Add Staff</button>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+              <div className="relative flex-1 max-w-xs">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Search staff…"
+                  className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300" />
+              </div>
+              <span className="text-sm text-gray-400">{filteredStaff.length} staff</span>
+              <button className="ml-auto px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">+ Add Staff</button>
             </div>
             <table className="w-full text-sm">
               <thead><tr className="bg-gray-50 border-b border-gray-100">
@@ -91,7 +103,7 @@ export default function Staff() {
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Start Date</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
               </tr></thead>
-              <tbody>{staff.map(s => (
+              <tbody>{filteredStaff.map(s => (
                 <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer group">
                   <td className="px-4 py-3">
                     <Link to={`/staff/${s.id}`} className="flex items-center gap-2">

@@ -8,7 +8,7 @@ import { inventory, systemUsers } from '../data/mockData'
 import {
   AlertTriangle, Package, Truck, Plus, ChevronDown, ChevronRight,
   Upload, Scan, X, Check, Shield, FileText, DollarSign, Leaf,
-  Clock, Layers, Wrench, Info, Barcode, Printer
+  Clock, Layers, Wrench, Info, Barcode, Printer, Search
 } from 'lucide-react'
 import BarcodeModal from '../components/BarcodeModal'
 
@@ -38,6 +38,7 @@ export default function Inventory() {
   const navigate = useNavigate()
 
   const [filter, setFilter] = useState<'all' | 'expiring' | 'low' | 'transit' | 'waste'>('all')
+  const [inventorySearch, setInventorySearch] = useState('')
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [showAddStock, setShowAddStock] = useState(false)
   const [barcodeItem, setBarcodeItem] = useState<{sku: string; name: string} | null>(null)
@@ -57,10 +58,17 @@ export default function Inventory() {
   })
   const inTransitItems = inventory.filter(i => i.batches.some(b => b.location === 'In Transit'))
 
-  const filtered = filter === 'expiring' ? expiringItems
+  const baseFiltered = filter === 'expiring' ? expiringItems
     : filter === 'low' ? lowStockItems
     : filter === 'transit' ? inTransitItems
     : inventory
+  const filtered = inventorySearch
+    ? baseFiltered.filter(i =>
+        i.name.toLowerCase().includes(inventorySearch.toLowerCase()) ||
+        i.sku.toLowerCase().includes(inventorySearch.toLowerCase()) ||
+        i.category.toLowerCase().includes(inventorySearch.toLowerCase())
+      )
+    : baseFiltered
 
   const toggleExpand = (id: number) => {
     setExpanded(prev => {
@@ -131,9 +139,15 @@ export default function Inventory() {
 
         {/* Main table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input value={inventorySearch} onChange={e => setInventorySearch(e.target.value)}
+                placeholder="Search inventory…"
+                className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300 w-44" />
+            </div>
             <p className="text-sm text-gray-500">{filtered.length} {cfg.itemLabel.toLowerCase()}{filtered.length !== 1 ? 's' : ''}</p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
 
               <button onClick={() => { setShowAddStock(true); setOcrState('idle'); setReceiptFile(null) }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-pluto-600 text-white rounded-lg text-sm font-medium hover:bg-pluto-700 transition-colors">

@@ -29,9 +29,18 @@ export default function Dashboard() {
   const { deals, invoices, organisations, contacts } = useApp()
   const [modal, setModal] = useState<'org' | 'contact' | 'deal' | null>(null)
 
+  const now = new Date()
+  const currentMonthName = now.toLocaleString('en-GB', { month: 'long' })
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth()
+
   const openDeals = deals.filter(d => !['Won', 'Lost'].includes(d.stage)).length
   const pipelineValue = deals.filter(d => !['Won', 'Lost'].includes(d.stage)).reduce((s, d) => s + d.value, 0)
-  const wonThisMonth = deals.filter(d => d.stage === 'Won').reduce((s, d) => s + d.value, 0)
+  const wonThisMonth = deals.filter(d => {
+    if (d.stage !== 'Won' || !d.closedAt) return false
+    const closed = new Date(d.closedAt)
+    return closed.getFullYear() === currentYear && closed.getMonth() === currentMonth
+  }).reduce((s, d) => s + d.value, 0)
   const overdueInvoices = invoices.filter(i => i.status === 'overdue').length
   const expiringItems = inventory.filter(i =>
     i.batches.some(b => { const d = (new Date(b.expiryDate).getTime() - Date.now()) / 86400000; return d <= 30 && d > 0 })
@@ -52,7 +61,7 @@ export default function Dashboard() {
   const stats = [
     { label: t('open deals'), value: openDeals, icon: GitBranch, color: 'bg-pluto-100 text-pluto-700', route: '/pipeline' },
     { label: t('pipeline value'), value: `${(pipelineValue / 1000).toFixed(0)}K CFA`, icon: TrendingUp, color: 'bg-violet-100 text-violet-700', route: '/pipeline' },
-    { label: t('won this month'), value: `${(wonThisMonth / 1000).toFixed(0)}K CFA`, icon: Trophy, color: 'bg-green-100 text-green-700', route: '/pipeline' },
+    { label: `Won in ${currentMonthName}`, value: `${(wonThisMonth / 1000).toFixed(0)}K CFA`, icon: Trophy, color: 'bg-green-100 text-green-700', route: '/pipeline' },
     { label: 'Total Contacts', value: contacts.length, icon: Activity, color: 'bg-blue-100 text-blue-700', route: '/contacts' },
   ]
 

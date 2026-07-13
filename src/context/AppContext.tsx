@@ -71,6 +71,12 @@ export type Reminder = {
   note: string
 }
 
+export type Activity = {
+  date: string
+  type: string
+  note: string
+}
+
 export type Deal = {
   id: number
   name: string
@@ -80,7 +86,11 @@ export type Deal = {
   value: number
   age: number
   owner: string
+  probability?: number
+  tags?: string[]
+  closedAt?: string | null
   lineItems: LineItem[]
+  activities?: Activity[]
   notes: string
   reminders: Reminder[]
 }

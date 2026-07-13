@@ -5,7 +5,7 @@ import { useLang } from '../context/LanguageContext'
 import { useApp } from '../context/AppContext'
 import NewDealModal from '../components/NewDealModal'
 import { contracts, contractTemplates, contacts as allContacts, systemUsers } from '../data/mockData'
-import { FileText, TrendingUp, FileCheck, ChevronRight, LayoutGrid, List, GitBranch, User, Package, Download } from 'lucide-react'
+import { FileText, TrendingUp, FileCheck, ChevronRight, LayoutGrid, List, GitBranch, User, Package, Download, Search } from 'lucide-react'
 import { downloadCSV } from '../utils/csvExport'
 
 const stages = ['Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']
@@ -45,15 +45,19 @@ export default function Pipeline() {
 
   const [stageFilter, setStageFilter] = useState('')
   const [ownerFilter, setOwnerFilter] = useState('')
+  const [search, setSearch] = useState('')
 
   const getOrg = (orgId: number) => organisations.find(o => o.id === orgId)?.name || '—'
   const getContact = (contactId?: number) => contactId ? allContacts.find(c => c.id === contactId) : null
   const getPrimaryProduct = (deal: typeof deals[0]) => deal.lineItems?.[0]?.description || null
 
   const filteredDeals = deals.filter(d => {
+    const q = search.toLowerCase()
+    const orgName = getOrg(d.orgId).toLowerCase()
+    const matchSearch = !search || d.name.toLowerCase().includes(q) || orgName.includes(q)
     const matchStage = !stageFilter || d.stage === stageFilter
     const matchOwner = !ownerFilter || d.owner === ownerFilter
-    return matchStage && matchOwner
+    return matchSearch && matchStage && matchOwner
   })
 
   const weightedValue = deals
@@ -110,6 +114,12 @@ export default function Pipeline() {
           <div className="space-y-4">
             {/* Filters + weighted value */}
             <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Search deals…"
+                  className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pluto-300 w-44" />
+              </div>
               <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
                 className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-pluto-300">
                 <option value="">All stages</option>
